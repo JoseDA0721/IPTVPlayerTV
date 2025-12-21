@@ -9,9 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
-
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
@@ -86,4 +85,9 @@ fun LoginScreen(
             Text(text = it, color = Color.Red)
         }
     }
+}
+
+@Composable
+fun TvTextField(value: host, onValueChange: () -> Unit, label: () -> Unit) {
+    TODO("Not yet implemented")
 }
