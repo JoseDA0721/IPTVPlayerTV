@@ -1,3 +1,5 @@
+package com.example.iptvplayertv.presentation.login
+
 data class LoginState(
     val host: String = "",
     val username: String = "",
