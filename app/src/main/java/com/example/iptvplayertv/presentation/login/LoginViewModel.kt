@@ -4,15 +4,16 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.iptvplayertv.data.preferences.UserPreferences
 import com.example.iptvplayertv.data.repository.XtreamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repo: XtreamRepository
+    private val repository: XtreamRepository,
+    private val userPreferences: UserPreferences  // ← Inyectar UserPreferences
 ) : ViewModel() {
 
     private val _state = mutableStateOf(LoginState())
@@ -48,7 +49,7 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = current.copy(isLoading = true, error = null)
 
-            val result = repo.login(
+            val result = repository.login(
                 host = current.host,
                 user = current.username,
                 pass = current.password
@@ -56,6 +57,15 @@ class LoginViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = { response ->
+                    // ✅ GUARDAR las credenciales después del login exitoso
+                    userPreferences.saveCredentials(
+                        host = current.host,
+                        username = current.username,
+                        password = current.password,
+                        expDate = response.userInfo.expDate,
+                        status = response.userInfo.status
+                    )
+
                     _state.value = _state.value.copy(
                         isLoading = false,
                         success = true,

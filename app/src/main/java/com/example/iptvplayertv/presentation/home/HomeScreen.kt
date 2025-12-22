@@ -1,37 +1,36 @@
 package com.example.iptvplayertv.presentation.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Button
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.Text
-import com.example.iptvplayertv.R
-import java.text.SimpleDateFormat
-import java.util.*
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -39,12 +38,33 @@ fun HomeScreen(
     onNavigateToMovies: () -> Unit = {},
     onNavigateToSeries: () -> Unit = {}
 ) {
+    // This is the "Stateful" version
     val state by viewModel.state
+
+    HomeScreenContent(
+        state = state,
+        onRefresh = { viewModel.refreshData() },
+        onNavigateToLiveTV = onNavigateToLiveTV,
+        onNavigateToMovies = onNavigateToMovies,
+        onNavigateToSeries = onNavigateToSeries
+    )
+}
+
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+fun HomeScreenContent(
+    state: HomeState, // Assuming your state class is called HomeState
+    onRefresh: () -> Unit,
+    onNavigateToLiveTV: () -> Unit,
+    onNavigateToMovies: () -> Unit,
+    onNavigateToSeries: () -> Unit
+) {
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1E1B4B))
+            .background(Color(0xFF0D0D0D))
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -60,38 +80,44 @@ fun HomeScreen(
                     .padding(horizontal = 60.dp),
                 horizontalArrangement = Arrangement.spacedBy(30.dp)
             ) {
-                MainCard(
+                HomeSectionCard(
                     title = "TV DIRECTO",
-                    backgroundColor = Brush.linearGradient(
-                        colors = listOf(Color(0xFF06B6D4), Color(0xFF0891B2))
-                    ),
                     icon = Icons.Default.Tv,
-                    count = state.liveChannelsCount,
-                    lastUpdate = state.lastUpdate,
+                    subtitle = "${state.liveChannelsCount} canales",
+                    background = Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF1A1A1A),
+                            Color(0xFF1A1A1A)
+                        )
+                    ),
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToLiveTV
                 )
 
-                MainCard(
-                    title = "MOVIES",
-                    backgroundColor = Brush.linearGradient(
-                        colors = listOf(Color(0xFF8B5CF6), Color(0xFF7C3AED))
+                HomeSectionCard(
+                    title = "PELICULAS",
+                    icon = Icons.Default.Movie,
+                    subtitle = "${state.moviesCount} películas",
+                    background = Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF1A1A1A),
+                            Color(0xFF1A1A1A)
+                        )
                     ),
-                    icon = Icons.Default.PlayCircle,
-                    count = state.moviesCount,
-                    lastUpdate = state.lastUpdate,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToMovies
                 )
 
-                MainCard(
+                HomeSectionCard(
                     title = "SERIES",
-                    backgroundColor = Brush.linearGradient(
-                        colors = listOf(Color(0xFFF97316), Color(0xFFEA580C))
-                    ),
                     icon = Icons.Default.Movie,
-                    count = state.seriesCount,
-                    lastUpdate = state.lastUpdate,
+                    subtitle = "${state.seriesCount} series",
+                    background = Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF1A1A1A),
+                            Color(0xFF1A1A1A)
+                        )
+                    ),
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToSeries
                 )
@@ -102,7 +128,7 @@ fun HomeScreen(
             // Bottom Info
             BottomInfo(
                 userInfo = state.userInfo,
-                onRefresh = { viewModel.refreshData() }
+                onRefresh = onRefresh
             )
         }
 
@@ -114,7 +140,7 @@ fun HomeScreen(
                     .background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color.White)
+                CircularProgressIndicator(color = Color(0xFFF5F5F5))
             }
         }
     }
@@ -133,12 +159,12 @@ fun TopBar() {
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp)),
+                .background(Color(0xFF0D0D0D), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "IPTV\nPLAYER",
-                color = Color(0xFF00D9FF),
+                color = Color(0xFFF5F5F5),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -153,12 +179,8 @@ fun TopBar() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             TopBarButton(
-                icon = Icons.Default.Notifications,
-                label = "Notifications"
-            )
-            TopBarButton(
                 icon = Icons.Default.Person,
-                label = "User Info"
+                label = "User Info",
             )
             TopBarButton(
                 icon = Icons.Default.SwapHoriz,
@@ -187,39 +209,56 @@ fun TopBarButton(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color.White,
+                tint = Color(0xFFD97706),
                 modifier = Modifier.size(28.dp)
             )
         }
         Text(
             text = label,
-            color = Color.White,
+            color = Color(0xFFF5F5F5),
             fontSize = 11.sp,
             textAlign = TextAlign.Center
         )
     }
 }
-
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun MainCard(
+fun HomeSectionCard(
     title: String,
-    backgroundColor: Brush,
-    icon: ImageVector,
-    count: Int,
-    lastUpdate: String,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    icon: ImageVector,
+    subtitle: String? = null,
+    background: Brush,
+    onClick: () -> Unit
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+
     Button(
         onClick = onClick,
-        modifier = modifier.height(280.dp),
-        shape = RoundedCornerShape(20.dp)
+        // Use the TV version of ButtonDefaults
+        colors = ButtonDefaults.colors(
+            containerColor = Color.Transparent,
+            focusedContainerColor = Color.Transparent,
+            pressedContainerColor = Color.Transparent
+        ),
+        modifier = modifier
+            .height(280.dp)
+            .onFocusChanged { isFocused = it.isFocused }
+            .graphicsLayer {
+                scaleX = if (isFocused) 1.08f else 1f
+                scaleY = if (isFocused) 1.08f else 1f
+            },
+        shape = ButtonDefaults.shape(shape = RoundedCornerShape(20.dp))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor, RoundedCornerShape(20.dp))
+                .background(background, RoundedCornerShape(20.dp))
+                .border(
+                    width = if (isFocused) 3.dp else 0.dp,
+                    color = if (isFocused) Color(0xFFFBBF24) else Color.Transparent,
+                    shape = RoundedCornerShape(20.dp)
+                )
                 .padding(24.dp)
         ) {
             Column(
@@ -227,10 +266,11 @@ fun MainCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    tint = Color.White,
+                    tint = Color(0xFFF5F5F5),
                     modifier = Modifier.size(80.dp)
                 )
 
@@ -238,28 +278,17 @@ fun MainCard(
 
                 Text(
                     text = title,
-                    color = Color.White,
+                    color = Color(0xFFF5F5F5),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(Modifier.height(12.dp))
-
-                // Mostrar contador
-                Text(
-                    text = "$count disponibles",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Spacer(Modifier.weight(1f))
-
-                if (lastUpdate.isNotEmpty()) {
+                subtitle?.let {
+                    Spacer(Modifier.height(10.dp))
                     Text(
-                        text = "Actualizado: $lastUpdate",
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = 11.sp
+                        text = it,
+                        color = Color(0xFFF5F5F5).copy(alpha = 0.85f),
+                        fontSize = 16.sp
                     )
                 }
             }
@@ -288,12 +317,12 @@ fun BottomInfo(
             Icon(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = "Calendar",
-                tint = Color.White,
+                tint = Color(0xFFF5F5F5),
                 modifier = Modifier.size(20.dp)
             )
             Text(
                 text = "Expiration: ${userInfo?.expDate ?: "N/A"}",
-                color = Color.White,
+                color = Color(0xFFF5F5F5),
                 fontSize = 16.sp
             )
         }
@@ -306,12 +335,12 @@ fun BottomInfo(
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "User",
-                tint = Color.White,
+                tint = Color(0xFFF5F5F5),
                 modifier = Modifier.size(20.dp)
             )
             Text(
                 text = "Logged In: ${userInfo?.username ?: "Guest"}",
-                color = Color.White,
+                color = Color(0xFFF5F5F5),
                 fontSize = 16.sp
             )
         }
@@ -319,7 +348,13 @@ fun BottomInfo(
         // Refresh Button
         Button(
             onClick = onRefresh,
-            shape = RoundedCornerShape(8.dp)
+            modifier = Modifier.height(48.dp),
+            shape = ButtonDefaults.shape(RoundedCornerShape(8.dp)),
+            colors = ButtonDefaults.colors(
+                containerColor = Color(0xFFD97706),
+                contentColor = Color(0xFF1F2937),
+                focusedContainerColor = Color(0xFFD97706),
+            ),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -328,15 +363,39 @@ fun BottomInfo(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "Refresh",
-                    tint = Color.White
+                    tint = Color(0xFFF5F5F5),
                 )
                 Text(
                     text = "ACTUALIZAR",
-                    color = Color.White,
+                    color = Color(0xFFF5F5F5),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
     }
+}
+
+@Preview(
+    name = "Television (4K)",
+    device = "id:tv_4k"
+)
+@Composable
+fun HomeScreenPreview() {
+    // Provide dummy state data
+    val dummyState = HomeState(
+        liveChannelsCount = 100,
+        moviesCount = 500,
+        seriesCount = 50,
+        lastUpdate = "2023-10-27",
+        isLoading = false
+    )
+
+    HomeScreenContent(
+        state = dummyState,
+        onRefresh = {},
+        onNavigateToLiveTV = {},
+        onNavigateToMovies = {},
+        onNavigateToSeries = {}
+    )
 }

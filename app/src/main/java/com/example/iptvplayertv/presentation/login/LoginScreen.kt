@@ -71,7 +71,7 @@ fun LoginScreenContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A)),
+            .background(Color(0xFF0D0D0D)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -86,7 +86,7 @@ fun LoginScreenContent(
                 text = "IPTV Player",
                 fontSize = 42.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color(0xFFF5F5F5)
             )
 
             Spacer(Modifier.height(8.dp))
@@ -204,7 +204,7 @@ fun LoginScreenContent(
                     ) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
+                            color = Color(0xFFF5F5F5),
                             strokeWidth = 2.dp
                         )
                         Spacer(Modifier.width(10.dp))
@@ -238,7 +238,7 @@ fun LoginScreenContent(
                 ) {
                     Text(
                         text = "❌ $error",
-                        color = Color.White,
+                        color = Color(0xFFF5F5F5),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -260,7 +260,7 @@ fun LoginScreenContent(
                 ) {
                     Text(
                         text = "✓ ¡Conexión exitosa!",
-                        color = Color.White,
+                        color = Color(0xFFF5F5F5),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -272,7 +272,10 @@ fun LoginScreenContent(
     }
 }
 
-@Preview
+@Preview(
+    name = "Television (4K)",
+    device = "id:tv_4k"
+)
 @Composable
 fun LoginScreenPreview() {
     // Now the preview doesn't need a ViewModel at all!
