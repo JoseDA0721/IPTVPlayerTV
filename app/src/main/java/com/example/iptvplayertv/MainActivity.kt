@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import com.example.iptvplayertv.presentation.home.HomeScreen
+import com.example.iptvplayertv.presentation.home.HomeViewModel
 import com.example.iptvplayertv.presentation.login.LoginScreen
 import com.example.iptvplayertv.presentation.login.LoginViewModel
 import com.example.iptvplayertv.ui.theme.IPTVPlayerTVTheme
@@ -58,7 +59,13 @@ fun IPTVPlayerApp() {
         }
 
         composable("home") {
-            HomeScreen()
+            val viewModel: HomeViewModel = hiltViewModel()
+            HomeScreen(
+                viewModel = viewModel,
+                onNavigateToLiveTV = { /* TODO */ },
+                onNavigateToMovies = { /* TODO */ },
+                onNavigateToSeries = { /* TODO */ }
+            )
         }
     }
 }

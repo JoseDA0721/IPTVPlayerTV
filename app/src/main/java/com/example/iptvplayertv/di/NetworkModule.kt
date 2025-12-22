@@ -27,9 +27,19 @@ object NetworkModule {
 
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .dns(object : okhttp3.Dns {
+                override fun lookup(hostname: String): List<java.net.InetAddress> {
+                    return try {
+                        okhttp3.Dns.SYSTEM.lookup(hostname)
+                    } catch (e: Exception) {
+                        // Intentar con DNS de Google como fallback
+                        java.net.InetAddress.getAllByName(hostname).toList()
+                    }
+                }
+            })
             .build()
     }
 
