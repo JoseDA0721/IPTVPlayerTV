@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
@@ -36,9 +37,9 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToLiveTV: () -> Unit = {},
     onNavigateToMovies: () -> Unit = {},
-    onNavigateToSeries: () -> Unit = {}
+    onNavigateToSeries: () -> Unit = {}, // This is passed in here...
+    onLogout: () -> Unit = {}
 ) {
-    // This is the "Stateful" version
     val state by viewModel.state
 
     HomeScreenContent(
@@ -46,9 +47,14 @@ fun HomeScreen(
         onRefresh = { viewModel.refreshData() },
         onNavigateToLiveTV = onNavigateToLiveTV,
         onNavigateToMovies = onNavigateToMovies,
-        onNavigateToSeries = onNavigateToSeries
+        onNavigateToSeries = onNavigateToSeries, // ...and needs to be passed here
+        onLogout = {
+            viewModel.logout()
+            onLogout()
+        }
     )
 }
+
 
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -58,7 +64,8 @@ fun HomeScreenContent(
     onRefresh: () -> Unit,
     onNavigateToLiveTV: () -> Unit,
     onNavigateToMovies: () -> Unit,
-    onNavigateToSeries: () -> Unit
+    onNavigateToSeries: () -> Unit,
+    onLogout: () -> Unit
 ) {
 
     Box(
@@ -189,6 +196,10 @@ fun TopBar() {
             TopBarButton(
                 icon = Icons.Default.Settings,
                 label = "Settings"
+            )
+            TopBarButton(
+                icon = Icons.AutoMirrored.Filled.Logout,
+                label = "Logout"
             )
         }
     }
@@ -396,6 +407,6 @@ fun HomeScreenPreview() {
         onRefresh = {},
         onNavigateToLiveTV = {},
         onNavigateToMovies = {},
-        onNavigateToSeries = {}
-    )
+        onNavigateToSeries = {},
+    ) {}
 }

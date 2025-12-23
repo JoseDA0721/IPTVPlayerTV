@@ -1,6 +1,8 @@
 package com.example.iptvplayertv.di
 
 import com.example.iptvplayertv.data.remote.XtreamApi
+import com.example.iptvplayertv.data.repository.LiveTvRepository
+import com.example.iptvplayertv.data.repository.LiveTvRepositoryImpl
 import com.example.iptvplayertv.data.repository.XtreamRepository
 import com.example.iptvplayertv.data.repository.XtreamRepositoryImpl
 import dagger.Module
@@ -63,5 +65,11 @@ object NetworkModule {
     @Singleton
     fun provideXtreamRepository(api: XtreamApi): XtreamRepository {
         return XtreamRepositoryImpl(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLiveTvRepository(api: XtreamApi): LiveTvRepository {
+        return LiveTvRepositoryImpl(api)
     }
 }

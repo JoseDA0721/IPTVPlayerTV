@@ -1,6 +1,8 @@
 package com.example.iptvplayertv.data.remote
 
+import com.example.iptvplayertv.data.model.LiveCategory
 import com.example.iptvplayertv.data.model.LiveChannel
+import com.example.iptvplayertv.data.model.LiveChannelDetail
 import com.example.iptvplayertv.data.model.VodItem
 import com.example.iptvplayertv.data.model.XtreamAuthResponse
 import retrofit2.Response
@@ -17,6 +19,15 @@ interface XtreamApi {
         @Query("password") password: String
     ): Response<XtreamAuthResponse>
 
+    // Obtener categorías de canales en vivo
+    @GET
+    suspend fun getLiveCategories(
+        @Url url: String,
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("action") action: String = "get_live_categories"
+    ): Response<List<LiveCategory>>
+
     // Obtener lista de canales en vivo
     @GET
     suspend fun getLiveStreams(
@@ -25,6 +36,16 @@ interface XtreamApi {
         @Query("password") password: String,
         @Query("action") action: String = "get_live_streams"
     ): Response<List<LiveChannel>>
+
+    // Obtener canales por categoría
+    @GET
+    suspend fun getLiveStreamsByCategory(
+        @Url url: String,
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("action") action: String = "get_live_streams",
+        @Query("category_id") categoryId: String
+    ): Response<List<LiveChannelDetail>>
 
     // Obtener lista de películas (VOD)
     @GET

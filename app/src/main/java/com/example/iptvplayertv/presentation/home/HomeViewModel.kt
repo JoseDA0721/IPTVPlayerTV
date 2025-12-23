@@ -125,4 +125,16 @@ class HomeViewModel @Inject constructor(
     fun refreshData() {
         loadData()
     }
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Cerrando sesión...")
+                userPreferences.clearCredentials()
+                Log.d(TAG, "✓ Sesión cerrada exitosamente")
+            } catch (e: Exception) {
+                Log.e(TAG, "✗ Error al cerrar sesión", e)
+            }
+        }
+    }
 }
