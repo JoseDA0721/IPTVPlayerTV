@@ -1,8 +1,8 @@
 package com.example.iptvplayertv.presentation.account.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -13,6 +13,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -22,7 +24,9 @@ import com.example.iptvplayertv.presentation.account.AccountUiModel
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun AccountInfoCard(
-    info: AccountUiModel
+    info: AccountUiModel,
+    onRefresh: (() -> Unit)? = null,
+    onLogout: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
@@ -74,6 +78,14 @@ fun AccountInfoCard(
                 activeConnections = info.activeConnections,
                 maxConnections = info.maxConnections
             )
+
+            // Botones
+            if (onRefresh != null || onLogout != null) {
+                ActionButtons(
+                    onRefresh = onRefresh ?: {},
+                    onLogout = onLogout ?: {}
+                )
+            }
         }
     }
 }
@@ -86,31 +98,36 @@ private fun ActionButtons(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End), // ← Espaciado + alineación
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.tv.material3.Button(
+        Button(
             onClick = onLogout,
-            modifier = Modifier.weight(1f),
-            colors = androidx.tv.material3.ButtonDefaults.colors(
-                containerColor = Color(0xFF4A4D5E),
-                contentColor = Color.White
+            colors = ButtonDefaults.colors(
+                containerColor = Color(0xFFD97706),
+                contentColor = Color(0xFFF5F5F5),
+                focusedContainerColor = Color(0xFFD97706),
             ),
-            //shape = RoundedCornerShape(12.dp)
+            shape = ButtonDefaults.shape(
+                shape = RoundedCornerShape(12.dp)
+            )
         ) {
             Text(
                 text = "Cerrar Sesión",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
             )
         }
 
-        androidx.tv.material3.Button(
+        Button(
             onClick = onRefresh,
-            modifier = Modifier.weight(1f),
-            colors = androidx.tv.material3.ButtonDefaults.colors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF2C2E3A)
+            colors = ButtonDefaults.colors(
+                containerColor = Color(0xFFD97706),
+                contentColor = Color(0xFFF5F5F5),
+                focusedContainerColor = Color(0xFFD97706),
             ),
-            //shape = RoundedCornerShape(12.dp)
+            shape = ButtonDefaults.shape(
+                shape = RoundedCornerShape(12.dp)
+            )
         ) {
             Text(
                 text = "Actualizar",
@@ -118,6 +135,8 @@ private fun ActionButtons(
             )
         }
     }
+
+
 }
 
 @Composable
@@ -157,7 +176,7 @@ private fun DataGrid(
                 label = "Fecha Expiración",
                 value = expiryDate,
                 modifier = Modifier.weight(1f),
-                valueColor = Color(0xFFFFA726)
+                valueColor = Color(0xFFF8F8FA)
             )
 
             DataItem(
@@ -217,7 +236,7 @@ private fun DataItem(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    valueColor: Color = Color.White
+    valueColor: Color = Color(0xFFF8F8FA)
 ) {
     Column(
         modifier = modifier,
@@ -226,7 +245,7 @@ private fun DataItem(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.6f)
+            color = Color(0xFFF8F8FA)
         )
         Text(
             text = value,
@@ -252,12 +271,12 @@ private fun ConnectionSection(
             Text(
                 text = "Dispositivos Activos",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = Color(0xFFF8F8FA)
             )
             Text(
                 text = "$activeConnections / $maxConnections",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = Color(0xFFF8F8FA)
             )
         }
 

@@ -9,10 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
@@ -22,10 +21,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
@@ -33,7 +31,6 @@ import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.Text
-// import coil.compose.AsyncImage  // Coil no está disponible, usaremos placeholder
 import com.example.iptvplayertv.data.model.LiveCategory
 import com.example.iptvplayertv.data.model.LiveChannelDetail
 import com.example.iptvplayertv.data.model.LiveTvLoadState
@@ -164,7 +161,7 @@ fun LiveTvTopBar(
         ) {
             IconButton(onClick = onNavigateBack) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver",
                     tint = Color(0xFFF5F5F5),
                     modifier = Modifier.size(32.dp)
@@ -323,8 +320,6 @@ fun ChannelCard(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: Agregar Coil para cargar imágenes
-                // Por ahora solo mostramos el icono
                 Icon(
                     imageVector = Icons.Default.LiveTv,
                     contentDescription = null,
@@ -389,4 +384,117 @@ fun ChannelCard(
             }
         }
     }
+}
+
+// ============= PREVIEW =============
+
+@Preview(
+    name = "Television (4K)",
+    device = "id:tv_4k",
+    showBackground = true,
+    backgroundColor = 0xFF0D0D0D
+)
+@Composable
+fun LiveTvScreenPreview() {
+    // Datos de ejemplo para el preview
+    val dummyCategories = listOf(
+        LiveCategory(categoryId = "1", categoryName = "Deportes", parentId = 0),
+        LiveCategory(categoryId = "2", categoryName = "Noticias", parentId = 0),
+        LiveCategory(categoryId = "3", categoryName = "Entretenimiento", parentId = 0),
+        LiveCategory(categoryId = "4", categoryName = "Películas", parentId = 0)
+    )
+
+    val dummyChannels = listOf(
+        LiveChannelDetail(
+            num = 1,
+            name = "ESPN",
+            streamType = "live",
+            streamId = 1001,
+            streamIcon = "https://example.com/espn.png",
+            epgChannelId = "espn",
+            added = "2024-01-01",
+            categoryId = "1",
+            categoryName = "Deportes",
+            customSid = null,
+            tvArchive = 1,
+            directSource = null,
+            tvArchiveDuration = 7
+        ),
+        LiveChannelDetail(
+            num = 2,
+            name = "CNN",
+            streamType = "live",
+            streamId = 1002,
+            streamIcon = null,
+            epgChannelId = "cnn",
+            added = "2024-01-01",
+            categoryId = "2",
+            categoryName = "Noticias",
+            customSid = null,
+            tvArchive = 0,
+            directSource = null,
+            tvArchiveDuration = 0
+        ),
+        LiveChannelDetail(
+            num = 3,
+            name = "Discovery Channel",
+            streamType = "live",
+            streamId = 1003,
+            streamIcon = "https://example.com/discovery.png",
+            epgChannelId = "discovery",
+            added = "2024-01-01",
+            categoryId = "3",
+            categoryName = "Entretenimiento",
+            customSid = null,
+            tvArchive = 1,
+            directSource = null,
+            tvArchiveDuration = 3
+        ),
+        LiveChannelDetail(
+            num = 4,
+            name = "HBO",
+            streamType = "live",
+            streamId = 1004,
+            streamIcon = "https://example.com/hbo.png",
+            epgChannelId = "hbo",
+            added = "2024-01-01",
+            categoryId = "4",
+            categoryName = "Películas",
+            customSid = null,
+            tvArchive = 0,
+            directSource = null,
+            tvArchiveDuration = 0
+        ),
+        LiveChannelDetail(
+            num = 5,
+            name = "Fox Sports",
+            streamType = "live",
+            streamId = 1005,
+            streamIcon = null,
+            epgChannelId = "foxsports",
+            added = "2024-01-01",
+            categoryId = "1",
+            categoryName = "Deportes",
+            customSid = null,
+            tvArchive = 1,
+            directSource = null,
+            tvArchiveDuration = 7
+        )
+    )
+
+    val dummyState = LiveTvState(
+        categories = dummyCategories,
+        selectedCategory = dummyCategories.first(),
+        channels = dummyChannels,
+        loadState = LiveTvLoadState.Success(),
+        searchQuery = ""
+    )
+
+    LiveTvScreenContent(
+        state = dummyState,
+        onCategorySelected = {},
+        onChannelSelected = {},
+        onRefresh = {},
+        onNavigateBack = {}
+    )
 }

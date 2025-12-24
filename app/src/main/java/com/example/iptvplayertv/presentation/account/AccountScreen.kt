@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
 import com.example.iptvplayertv.presentation.account.components.AccountInfoCard
 import kotlinx.coroutines.launch
@@ -137,7 +136,9 @@ fun UserInfoScreenPreview() {
                 maxConnections = 3,
                 timeZone = "America/Thunder_Bay",
                 status = AccountStatus.ACTIVE
-            )
+            ),
+            onRefresh = { /* TODO */ },
+            onLogout = { /* TODO */ }
         )
     }
 }
