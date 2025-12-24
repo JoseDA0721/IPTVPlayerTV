@@ -38,7 +38,8 @@ data class ServerInfo(
     val serverProtocol: String?,
     @SerializedName("rtmp_port")
     val rtmpPort: String?,
-    val timestamp: String?
+    val timestamp: String?,
+    val timezone: String?
 )
 
 // Modelos para categorías

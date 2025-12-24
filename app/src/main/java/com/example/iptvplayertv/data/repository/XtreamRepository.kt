@@ -10,6 +10,8 @@ interface XtreamRepository {
     suspend fun getLiveChannelsCount(host: String, user: String, pass: String): Result<Int>
     suspend fun getMoviesCount(host: String, user: String, pass: String): Result<Int>
     suspend fun getSeriesCount(host: String, user: String, pass: String): Result<Int>
+    suspend fun getAccountInfo(host: String, user: String, pass: String): Result<XtreamAuthResponse>
+
 }
 
 class XtreamRepositoryImpl @Inject constructor(
@@ -145,6 +147,36 @@ class XtreamRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "✗ Excepción obteniendo series", e)
             Result.success(0)
+        }
+    }
+
+    override suspend fun getAccountInfo(
+        host: String,
+        user: String,
+        pass: String
+    ): Result<XtreamAuthResponse> {
+        return try {
+            val cleanHost = host.trim().removeSuffix("/")
+            val url = "$cleanHost/player_api.php"
+
+            Log.d(TAG, "Obteniendo información de la cuenta...")
+
+            val response = api.getAccountsInfo(
+                url = url,
+                username = user,
+                password = pass
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+                Log.d(TAG, "✓ Información de la cuenta: ${response.body()}")
+                Result.success(response.body()!!)
+            } else {
+                Log.e(TAG, "✗ Error: ${response.code()}")
+                Result.failure(Exception("Error del servidor: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "✗ Excepción", e)
+            Result.failure(e)
         }
     }
 }

@@ -22,7 +22,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private const val TAG = "HomeViewModel"
+        const val TAG = "HomeViewModel"
     }
 
     private val _state = mutableStateOf(HomeState())
@@ -73,7 +73,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadCounters(host: String, username: String, password: String) {
+    private fun loadCounters(host: String, username: String, password: String) {
         // Lanzar las 3 peticiones en paralelo
         viewModelScope.launch {
             val liveResult = repository.getLiveChannelsCount(host, username, password)
@@ -112,7 +112,7 @@ class HomeViewModel @Inject constructor(
             val date = Date(timestamp.toLong() * 1000)
             val format = SimpleDateFormat("MMMM dd, yyyy", Locale("es", "ES"))
             format.format(date)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             timestamp
         }
     }

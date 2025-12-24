@@ -76,7 +76,8 @@ fun HomeScreenContent(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            TopBar()
+            //Boton Logout
+            TopBar(onClick = onLogout)
 
             Spacer(Modifier.height(40.dp))
 
@@ -137,6 +138,7 @@ fun HomeScreenContent(
                 userInfo = state.userInfo,
                 onRefresh = onRefresh
             )
+
         }
 
         // Loading overlay
@@ -155,7 +157,9 @@ fun HomeScreenContent(
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun TopBar() {
+fun TopBar(
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -199,7 +203,8 @@ fun TopBar() {
             )
             TopBarButton(
                 icon = Icons.AutoMirrored.Filled.Logout,
-                label = "Logout"
+                label = "Logout",
+                onClick = onClick
             )
         }
     }

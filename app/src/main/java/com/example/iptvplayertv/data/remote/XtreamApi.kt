@@ -19,6 +19,13 @@ interface XtreamApi {
         @Query("password") password: String
     ): Response<XtreamAuthResponse>
 
+    @GET
+    suspend fun getAccountsInfo(
+        @Url url: String,
+        @Query("username") username: String,
+        @Query("password") password: String,
+    ): Response<XtreamAuthResponse>  // Usa tu clase existente
+
     // Obtener categorías de canales en vivo
     @GET
     suspend fun getLiveCategories(
