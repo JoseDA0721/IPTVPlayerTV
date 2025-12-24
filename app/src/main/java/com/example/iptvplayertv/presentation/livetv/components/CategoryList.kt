@@ -37,7 +37,7 @@ fun CategoryList(
         state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0D0D0D)),
+            .background(Color(0x05FFFFFF)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(vertical = 20.dp, horizontal = 20.dp)
     ) {
@@ -92,10 +92,11 @@ fun CategoryItem(
             ),
         colors = ButtonDefaults.colors(
             containerColor = Color(0xFF1A1A1A),
-            focusedContainerColor = Color(0xFF2A2A2A),
-            pressedContainerColor = Color(0xFF2A2A2A),
-            contentColor = Color(0xFFF5F5F5),
-            focusedContentColor = Color(0xFFF5F5F5)
+            //containerColor = Color(0xFF1A1A1A),
+            focusedContainerColor = Color.Transparent,
+            pressedContainerColor = Color.Transparent,
+            contentColor = Color.Transparent,
+            focusedContentColor = Color.Transparent
         ),
         shape = ButtonDefaults.shape(RoundedCornerShape(8.dp)),
     ) {
@@ -114,12 +115,12 @@ fun CategoryItem(
             )
 
             // Contador de canales
-            Text(
-                text = "${(10..30).random()}", // Reemplazar con category.channelCount
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color(0xFF888888)
-            )
+//            Text(
+//                text = "${(10..30).random()}", // Reemplazar con category.channelCount
+//                fontSize = 16.sp,
+//                fontWeight = FontWeight.Normal,
+//                color = Color(0xFF888888)
+//            )
         }
     }
 }
@@ -148,9 +149,8 @@ fun CategoryListPreview() {
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.35f)
+                .fillMaxWidth(0.40f)
                 .fillMaxHeight()
-                .background(Color(0xFF0D0D0D))
         ) {
             CategoryList(
                 categories = dummyCategories,

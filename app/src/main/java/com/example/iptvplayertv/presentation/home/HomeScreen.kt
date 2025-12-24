@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.IconButton
+import androidx.tv.material3.IconButtonDefaults
 import androidx.tv.material3.Text
 
 @Composable
@@ -230,7 +231,14 @@ fun TopBarButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(80.dp)
     ) {
-        IconButton(onClick = onClick) {
+        IconButton(
+            onClick = onClick,
+            colors = IconButtonDefaults.colors(
+                containerColor = Color.Transparent,
+                contentColor = Color(0xFFD97706),
+                focusedContainerColor = Color(0xFF555555)
+            )
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,

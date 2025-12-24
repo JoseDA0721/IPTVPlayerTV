@@ -19,20 +19,12 @@ data class LiveTvState(
     val categories: List<LiveCategory> = emptyList(),
     val selectedCategory: LiveCategory? = null,
     val channels: List<LiveChannelDetail> = emptyList(),
+    val filteredChannels: List<LiveChannelDetail> = emptyList(),
     val selectedChannel: LiveChannelDetail? = null,
     val loadState: LiveTvLoadState = LiveTvLoadState.Idle,
     val searchQuery: String = "",
     val credentials: com.example.iptvplayertv.data.preferences.UserCredentials? = null
-) {
-    val filteredChannels: List<LiveChannelDetail>
-        get() = if (searchQuery.isBlank()) {
-            channels
-        } else {
-            channels.filter {
-                it.name.contains(searchQuery, ignoreCase = true)
-            }
-        }
-}
+)
 
 @HiltViewModel
 class LiveTvViewModel @Inject constructor(
@@ -141,8 +133,8 @@ class LiveTvViewModel @Inject constructor(
 
                 result.fold(
                     onSuccess = { channels ->
-                        _state.value = _state.value.copy(
-                            channels = channels,
+                        val newState = updateStateWithFilter(channels, _state.value.searchQuery)
+                        _state.value = newState.copy(
                             loadState = LiveTvLoadState.Success()
                         )
                     },
@@ -164,16 +156,36 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
+    // Agrega esta función privada en tu ViewModel para reutilizar la lógica
+    private fun updateStateWithFilter(
+        currentChannels: List<LiveChannelDetail>,
+        query: String
+    ): LiveTvState {
+        val filtered = if (query.isBlank()) {
+            currentChannels
+        } else {
+            currentChannels.filter { it.name.contains(query, ignoreCase = true) }
+        }
+
+        return _state.value.copy(
+            channels = currentChannels,
+            searchQuery = query,
+            filteredChannels = filtered // Actualizamos la lista filtrada
+        )
+    }
+
     fun selectChannel(channel: LiveChannelDetail) {
         _state.value = _state.value.copy(selectedChannel = channel)
     }
 
     fun updateSearchQuery(query: String) {
-        _state.value = _state.value.copy(searchQuery = query)
+        _state.value = updateStateWithFilter(_state.value.channels, query)
     }
 
     fun refresh() {
         liveTvRepository.clearCache()
         loadCategories()
     }
+
+
 }
