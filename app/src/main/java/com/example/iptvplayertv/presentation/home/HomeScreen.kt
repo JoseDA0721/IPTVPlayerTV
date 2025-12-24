@@ -37,7 +37,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToLiveTV: () -> Unit = {},
     onNavigateToMovies: () -> Unit = {},
-    onNavigateToSeries: () -> Unit = {}, // This is passed in here...
+    onNavigateToSeries: () -> Unit = {},
+    onNavigateToAccount: () -> Unit = {}, // ← Nuevo
     onLogout: () -> Unit = {}
 ) {
     val state by viewModel.state
@@ -47,14 +48,14 @@ fun HomeScreen(
         onRefresh = { viewModel.refreshData() },
         onNavigateToLiveTV = onNavigateToLiveTV,
         onNavigateToMovies = onNavigateToMovies,
-        onNavigateToSeries = onNavigateToSeries, // ...and needs to be passed here
+        onNavigateToSeries = onNavigateToSeries,
+        onNavigateToAccount = onNavigateToAccount, // ← Nuevo
         onLogout = {
             viewModel.logout()
             onLogout()
         }
     )
 }
-
 
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -65,6 +66,7 @@ fun HomeScreenContent(
     onNavigateToLiveTV: () -> Unit,
     onNavigateToMovies: () -> Unit,
     onNavigateToSeries: () -> Unit,
+    onNavigateToAccount: () -> Unit,
     onLogout: () -> Unit
 ) {
 
@@ -77,7 +79,12 @@ fun HomeScreenContent(
             modifier = Modifier.fillMaxSize()
         ) {
             //Boton Logout
-            TopBar(onClick = onLogout)
+            TopBar(
+                onNavigateToAccount = onNavigateToAccount,
+                onLogout = onLogout
+            )
+
+
 
             Spacer(Modifier.height(40.dp))
 
@@ -158,7 +165,8 @@ fun HomeScreenContent(
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun TopBar(
-    onClick: () -> Unit
+    onNavigateToAccount: () -> Unit,
+    onLogout: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -192,6 +200,7 @@ fun TopBar(
             TopBarButton(
                 icon = Icons.Default.Person,
                 label = "User Info",
+                onClick = onNavigateToAccount
             )
             TopBarButton(
                 icon = Icons.Default.SwapHoriz,
@@ -204,7 +213,7 @@ fun TopBar(
             TopBarButton(
                 icon = Icons.AutoMirrored.Filled.Logout,
                 label = "Logout",
-                onClick = onClick
+                onClick = onLogout
             )
         }
     }
@@ -413,5 +422,7 @@ fun HomeScreenPreview() {
         onNavigateToLiveTV = {},
         onNavigateToMovies = {},
         onNavigateToSeries = {},
-    ) {}
+        onNavigateToAccount = {},
+        onLogout = {}
+    )
 }

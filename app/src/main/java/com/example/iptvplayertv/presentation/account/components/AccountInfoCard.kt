@@ -2,15 +2,7 @@ package com.example.iptvplayertv.presentation.account.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -29,22 +21,25 @@ import com.example.iptvplayertv.presentation.account.AccountUiModel
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun AccountInfoCard (
+fun AccountInfoCard(
     info: AccountUiModel
-){
+) {
     Surface(
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier
-            .background(Color.Transparent)
-            .border(width =1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-            )
             .shadow(
                 elevation = 16.dp,
                 shape = RoundedCornerShape(24.dp),
                 ambientColor = Color.Black.copy(alpha = 0.3f),
                 spotColor = Color.Black.copy(alpha = 0.3f)
             )
+            .fillMaxWidth(0.5f)
+            .widthIn(min = 400.dp, max = 600.dp),
+        color = Color(0xFF1A1A1A),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = Color.White.copy(alpha = 0.1f)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -83,8 +78,50 @@ fun AccountInfoCard (
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun DataGrid(
+private fun ActionButtons(
+    onRefresh: () -> Unit,
+    onLogout: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        androidx.tv.material3.Button(
+            onClick = onLogout,
+            modifier = Modifier.weight(1f),
+            colors = androidx.tv.material3.ButtonDefaults.colors(
+                containerColor = Color(0xFF4A4D5E),
+                contentColor = Color.White
+            ),
+            //shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = "Cerrar Sesión",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        androidx.tv.material3.Button(
+            onClick = onRefresh,
+            modifier = Modifier.weight(1f),
+            colors = androidx.tv.material3.ButtonDefaults.colors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF2C2E3A)
+            ),
+            //shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = "Actualizar",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun DataGrid(
     hostUrl: String,
     creationDate: String,
     expiryDate: String,
@@ -97,35 +134,35 @@ fun DataGrid(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(32.dp)
-        ){
+        ) {
             DataItem(
-                label = "Host URL",
+                label = "Servidor / Host",
                 value = hostUrl,
                 modifier = Modifier.weight(1f)
             )
 
             DataItem(
-                label = "Fecha de creación",
+                label = "Fecha Inicio",
                 value = creationDate,
                 modifier = Modifier.weight(1f)
             )
         }
 
         // Segunda fila
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(32.dp)
-        ){
+        ) {
             DataItem(
-                label = "Fecha de expiración",
+                label = "Fecha Expiración",
                 value = expiryDate,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                valueColor = Color(0xFFFFA726)
             )
 
             DataItem(
-                label = "Prueba gratuita",
-                value = if (isTrial) "Sí" else "No",
+                label = "Tipo de Cuenta",
+                value = if (isTrial) "Prueba" else "No Prueba",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -133,27 +170,26 @@ fun DataGrid(
 }
 
 @Composable
-fun HeaderSection(
+private fun HeaderSection(
     userName: String,
     status: AccountStatus
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Avatar
         Surface(
             modifier = Modifier
-            .size(80.dp)
-            .clip(CircleShape),
+                .size(80.dp)
+                .clip(CircleShape),
             color = Color(0xFF5B6EF5)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
-            ){
+            ) {
                 Text(
                     text = userName.take(2).uppercase(),
                     style = MaterialTheme.typography.headlineLarge,
@@ -163,10 +199,9 @@ fun HeaderSection(
         }
 
         // Nombre y Estado
-
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
-        ){
+        ) {
             Text(
                 text = userName,
                 style = MaterialTheme.typography.titleLarge,
@@ -232,4 +267,3 @@ private fun ConnectionSection(
         )
     }
 }
-

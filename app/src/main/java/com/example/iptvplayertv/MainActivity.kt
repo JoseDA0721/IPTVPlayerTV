@@ -15,6 +15,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
+import com.example.iptvplayertv.presentation.account.AccountViewModel
+import com.example.iptvplayertv.presentation.account.UserInfoScreen
 import com.example.iptvplayertv.presentation.home.HomeScreen
 import com.example.iptvplayertv.presentation.home.HomeViewModel
 import com.example.iptvplayertv.presentation.livetv.LiveTvScreen
@@ -75,10 +77,23 @@ fun IPTVPlayerApp() {
                 },
                 onNavigateToMovies = { /* TODO */ },
                 onNavigateToSeries = { /* TODO */ },
+                onNavigateToAccount = {
+                    navController.navigate("account")
+                },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable("account") {
+            val viewModel: AccountViewModel = hiltViewModel()
+            UserInfoScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
