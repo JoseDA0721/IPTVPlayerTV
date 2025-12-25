@@ -126,7 +126,7 @@ fun HomeScreenContent(
 
                 HomeSectionCard(
                     title = "SERIES",
-                    icon = Icons.Default.Movie,
+                    icon = Icons.Default.LocalMovies,
                     subtitle = "${state.seriesCount} series",
                     background = Brush.verticalGradient(
                         listOf(

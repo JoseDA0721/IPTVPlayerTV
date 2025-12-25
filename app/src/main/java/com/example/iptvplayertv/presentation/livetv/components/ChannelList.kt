@@ -32,6 +32,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.IconButtonDefaults
 import androidx.tv.material3.Text
+import com.example.iptvplayertv.data.model.LiveCategory
 import com.example.iptvplayertv.data.model.LiveChannelDetail
 
 @Composable
@@ -39,7 +40,7 @@ fun ChannelList(
     channels: List<LiveChannelDetail>,
     onChannelSelected: (LiveChannelDetail) -> Unit,
     onBackToCategories: () -> Unit,
-    showingChannels: Boolean
+    state: LiveCategory?
 ) {
     if (channels.isEmpty()) {
         Box(
@@ -59,7 +60,6 @@ fun ChannelList(
         ) {
 
             item {
-                val tituloDinamico = channels.firstOrNull()?.categoryName ?: "Canales"
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -69,27 +69,25 @@ fun ChannelList(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ){
-                        if (showingChannels) {
-                            IconButton(
-                                onClick = onBackToCategories,
-                                modifier = Modifier
-                                    .size(32.dp),
-                                colors = IconButtonDefaults.colors(
-                                    containerColor = Color.Transparent,
-                                    contentColor = Color(0xFFD97706),
-                                    focusedContainerColor = Color(0xFF555555)
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Volver",
-                                    tint = Color(0xFFD97706),
-                                )
-                            }
+                        IconButton(
+                            onClick = onBackToCategories,
+                            modifier = Modifier
+                                .size(32.dp),
+                            colors = IconButtonDefaults.colors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color(0xFFD97706),
+                                focusedContainerColor = Color(0xFF555555)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = Color(0xFFD97706),
+                            )
                         }
 
                         Text(
-                            text = tituloDinamico,
+                            text = state?.categoryName ?: "",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFF5F5F5),
@@ -252,7 +250,7 @@ fun ChannelListPreview() {
                 channels = dummyChannels,
                 onChannelSelected = {},
                 onBackToCategories = {},
-                showingChannels = true
+                state = LiveCategory(categoryId = "1", categoryName = "Deportes", parentId = 0)
             )
         }
     }

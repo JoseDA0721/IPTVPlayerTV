@@ -104,6 +104,8 @@ class LiveTvViewModel @Inject constructor(
         _state.value = _state.value.copy(
             selectedCategory = category,
             channels = emptyList(),
+            filteredChannels = emptyList(),
+            searchQuery = "",
             selectedChannel = null
         )
 

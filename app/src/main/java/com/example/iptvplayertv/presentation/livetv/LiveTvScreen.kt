@@ -6,12 +6,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.iptvplayertv.data.model.LiveCategory
 import com.example.iptvplayertv.data.model.LiveChannelDetail
 import com.example.iptvplayertv.data.model.LiveTvLoadState
 import com.example.iptvplayertv.presentation.livetv.components.LiveTvNavigationPanel
 import com.example.iptvplayertv.presentation.livetv.components.LiveTvPreviewPanel
+import com.example.iptvplayertv.presentation.livetv.components.SidebarMenu
 
 @Composable
 fun LiveTvScreen(
@@ -26,14 +26,6 @@ fun LiveTvScreen(
         onCategorySelected = { viewModel.selectCategory(it) },
         onChannelSelected = { channel ->
             viewModel.selectChannel(channel)
-            state.credentials?.let { creds ->
-                val streamUrl = channel.getStreamUrl(
-                    host = creds.host,
-                    username = creds.username,
-                    password = creds.password
-                )
-                onNavigateToPlayer(streamUrl, channel.name, channel.num)
-            }
         },
         onRefresh = { viewModel.refresh() },
         onNavigateBack = onNavigateBack
@@ -62,7 +54,15 @@ fun LiveTvScreenContent(
                 .fillMaxSize()
                 .weight(1f)
         ) {
-            // Left Panel (35% width) - Navigation
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.05f)
+                    .fillMaxHeight()
+            ){
+                SidebarMenu()
+            }
+
+            // Left Panel (30% width) - Navigation
             LiveTvNavigationPanel(
                 state = state,
                 showingChannels = showingChannels,
@@ -77,13 +77,13 @@ fun LiveTvScreenContent(
                     .weight(0.35f)
             )
 
-            // Right Panel (65% width) - Preview
+            // Right Panel (60% width) - Preview
             LiveTvPreviewPanel(
                 selectedChannel = state.selectedChannel,
                 loadState = state.loadState,
                 modifier = Modifier
                     .fillMaxHeight()
-                    .weight(0.65f)
+                    .weight(0.60f)
             )
         }
     }
