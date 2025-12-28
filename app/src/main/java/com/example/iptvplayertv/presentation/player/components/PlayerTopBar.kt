@@ -26,6 +26,7 @@ fun PlayerTopBar(
     channelNumber: Int,
     categoryName: String = "",
     isLive: Boolean = true,
+    customBadge: String? = null, // ← NUEVO: Badge personalizado
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -96,8 +97,11 @@ fun PlayerTopBar(
             }
         }
 
-        // Lado derecho: Badge EN VIVO
-        if (isLive) {
+        // Lado derecho: Badge
+        // ⚠️ CAMBIO IMPORTANTE: Usar customBadge si existe, sino usar "EN VIVO" para isLive
+        val badgeText = customBadge ?: if (isLive) "EN VIVO" else null
+
+        if (badgeText != null) {
             Box(
                 modifier = Modifier
                     .background(
@@ -110,14 +114,16 @@ fun PlayerTopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Punto rojo parpadeante
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(Color.Red, shape = CircleShape)
-                    )
+                    // Punto rojo parpadeante (solo para "EN VIVO")
+                    if (badgeText == "EN VIVO") {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(Color.Red, shape = CircleShape)
+                        )
+                    }
                     Text(
-                        text = "EN VIVO",
+                        text = badgeText,
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
@@ -144,6 +150,50 @@ fun PlayerTopBarPreview() {
             channelNumber = 101,
             categoryName = "Documentales",
             isLive = true,
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Movie Badge Preview",
+    device = "id:tv_4k",
+)
+@Composable
+fun MovieTopBarPreview() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        PlayerTopBar(
+            channelName = "Avatar: El Camino del Agua",
+            channelNumber = 12345,
+            categoryName = "Ciencia Ficción",
+            isLive = false,
+            customBadge = "PELÍCULA",
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Series Badge Preview",
+    device = "id:tv_4k",
+)
+@Composable
+fun SeriesTopBarPreview() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        PlayerTopBar(
+            channelName = "Breaking Bad",
+            channelNumber = 1,
+            categoryName = "Ozymandias",
+            isLive = false,
+            customBadge = "T5:E14",
             onBackClick = {}
         )
     }

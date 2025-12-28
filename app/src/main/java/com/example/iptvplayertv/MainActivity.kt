@@ -23,7 +23,8 @@ import com.example.iptvplayertv.presentation.livetv.LiveTvScreen
 import com.example.iptvplayertv.presentation.livetv.LiveTvViewModel
 import com.example.iptvplayertv.presentation.login.LoginScreen
 import com.example.iptvplayertv.presentation.login.LoginViewModel
-import com.example.iptvplayertv.presentation.player.PlayerScreen
+import com.example.iptvplayertv.presentation.player.PlayerConfiguration
+import com.example.iptvplayertv.presentation.player.UniversalPlayerScreen
 import com.example.iptvplayertv.ui.theme.IPTVPlayerTVTheme
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLDecoder
@@ -114,27 +115,52 @@ fun IPTVPlayerApp() {
         }
 
         composable(
-            route = "player/{streamUrl}/{channelName}/{channelNumber}",
+            route = "player/{contentType}/{streamUrl}/{title}/{subtitle}",
             arguments = listOf(
+                navArgument("contentType") { type = NavType.StringType },
                 navArgument("streamUrl") { type = NavType.StringType },
-                navArgument("channelName") { type = NavType.StringType },
-                navArgument("channelNumber") { type = NavType.IntType }
+                navArgument("title") { type = NavType.StringType },
+                navArgument("subtitle") { type = NavType.StringType; nullable = true }
             )
         ) { backStackEntry ->
-            val encodedUrl = backStackEntry.arguments?.getString("streamUrl") ?: ""
-            val encodedName = backStackEntry.arguments?.getString("channelName") ?: ""
-            val channelNumber = backStackEntry.arguments?.getInt("channelNumber") ?: 0
+            val contentTypeStr = backStackEntry.arguments?.getString("contentType") ?: ""
+            val streamUrl = URLDecoder.decode(
+                backStackEntry.arguments?.getString("streamUrl") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+            val title = URLDecoder.decode(
+                backStackEntry.arguments?.getString("title") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
 
-            val streamUrl = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
-            val channelName = URLDecoder.decode(encodedName, StandardCharsets.UTF_8.toString())
+            val config = when (contentTypeStr) {
+                "live" -> PlayerConfiguration.forLiveTV(
+                    streamUrl = streamUrl,
+                    channelName = title,
+                    channelNumber = 101, // TODO: Pasar como parámetro
+                    categoryName = ""
+                )
+                "movie" -> PlayerConfiguration.forMovie(
+                    streamUrl = streamUrl,
+                    movieName = title,
+                    movieId = 0,
+                    durationSeconds = 7200 // TODO: Obtener de API
+                )
+                "series" -> PlayerConfiguration.forSeries(
+                    streamUrl = streamUrl,
+                    seriesName = title,
+                    seriesId = 0,
+                    seasonNumber = 1,
+                    episodeNumber = 1,
+                    episodeName = "",
+                    durationSeconds = 2400
+                )
+                else -> PlayerConfiguration.forLiveTV(streamUrl, title, 0, "")
+            }
 
-            PlayerScreen(
-                streamUrl = streamUrl,
-                channelName = channelName,
-                channelNumber = channelNumber,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+            UniversalPlayerScreen(
+                config = config,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
