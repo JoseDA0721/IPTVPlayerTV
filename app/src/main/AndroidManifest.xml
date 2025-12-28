@@ -5,6 +5,7 @@
     <!-- Permisos necesarios -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- El audio está habilitado por defecto, no necesita permiso especial -->
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -21,7 +22,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.IPTVPlayerTV"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"> <!-- Aceleración de hardware para mejor rendimiento de video/audio -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

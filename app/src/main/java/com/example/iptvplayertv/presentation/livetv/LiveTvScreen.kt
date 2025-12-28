@@ -21,24 +21,41 @@ fun LiveTvScreen(
 ) {
     val state by viewModel.state
 
+    // Construir la URL del stream cuando hay un canal seleccionado
+    val streamUrl = remember(state.selectedChannel, state.credentials) {
+        if (state.selectedChannel != null && state.credentials != null) {
+            state.selectedChannel!!.getStreamUrl(
+                host = state.credentials!!.host,
+                username = state.credentials!!.username,
+                password = state.credentials!!.password
+            )
+        } else {
+            null
+        }
+    }
+
     LiveTvScreenContent(
         state = state,
+        streamUrl = streamUrl,
         onCategorySelected = { viewModel.selectCategory(it) },
         onChannelSelected = { channel ->
             viewModel.selectChannel(channel)
         },
         onRefresh = { viewModel.refresh() },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        onNavigateToPlayer = onNavigateToPlayer
     )
 }
 
 @Composable
 fun LiveTvScreenContent(
     state: LiveTvState,
+    streamUrl: String?,
     onCategorySelected: (LiveCategory) -> Unit,
     onChannelSelected: (LiveChannelDetail) -> Unit,
     onRefresh: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToPlayer: (streamUrl: String, channelName: String, channelNumber: Int) -> Unit
 ) {
     var showingChannels by remember { mutableStateOf(false) }
 
@@ -81,6 +98,10 @@ fun LiveTvScreenContent(
             LiveTvPreviewPanel(
                 selectedChannel = state.selectedChannel,
                 loadState = state.loadState,
+                streamUrl = streamUrl,
+                onPlayFullscreen = { url, name, num, category ->
+                    onNavigateToPlayer(url, name, num)
+                },
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.60f)
@@ -139,38 +160,30 @@ fun LiveTvScreenPreview() {
         )
     )
 
-    // 2. ESTADO DEL PREVIEW: Aquí está la magia
-    // Controla si estamos viendo categorías o canales
     var showingChannels by remember { mutableStateOf(false) }
-
-
-    // Controla qué categoría se seleccionó
     var selectedCategory by remember { mutableStateOf<LiveCategory?>(null) }
 
-    // 3. LÓGICA DE FILTRADO (Simulando el ViewModel)
-    // Cada vez que cambia la categoría seleccionada, recalculamos la lista de canales
     val currentFilteredChannels = remember(selectedCategory) {
         if (selectedCategory == null) emptyList()
         else dummyChannels.filter { it.categoryId == selectedCategory?.categoryId }
     }
 
-    // 4. Construimos el estado actual basado en las variables anteriores
-    // Nota: Asumo que LiveTvState tiene un campo 'filteredChannels'.
-    // Si tu data class no lo tiene, ajusta esto para pasar la lista donde corresponda.
     val currentState = LiveTvState(
         categories = dummyCategories,
         selectedCategory = selectedCategory,
         channels = dummyChannels,
-        filteredChannels = currentFilteredChannels,// Lista completa // Lista filtrada (NECESARIO AGREGAR ESTO SI NO EXISTE EN TU DATA CLASS)
+        filteredChannels = currentFilteredChannels,
         loadState = LiveTvLoadState.Success(),
         searchQuery = ""
     )
 
     LiveTvScreenContent(
-        state  = currentState,
+        state = currentState,
+        streamUrl = null,
         onCategorySelected = {},
         onChannelSelected = {},
         onRefresh = {},
-        onNavigateBack = {}
+        onNavigateBack = {},
+        onNavigateToPlayer = { _, _, _ -> }
     )
 }
