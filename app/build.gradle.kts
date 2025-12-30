@@ -91,7 +91,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-    ksp(libs.sqlite.jdbc)
 
     // Testing
     androidTestImplementation(platform(libs.androidx.compose.bom))
