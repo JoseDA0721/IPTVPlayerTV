@@ -5,15 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.example.iptvplayertv.presentation.player.components.*
 import kotlinx.coroutines.delay
 
 /**
- * Pantalla de reproductor universal
- * Soporta: Live TV, Películas y Series
+ * ✅ Pantalla de reproductor OPTIMIZADA
+ * Previene memory leaks y mejora el rendimiento
  */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -24,26 +24,44 @@ fun UniversalPlayerScreen(
     onShowSeasons: () -> Unit = {},
     onPlayNext: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     var showControls by remember { mutableStateOf(true) }
     var playerState by remember { mutableStateOf(VideoPlayerState()) }
-    var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
     var currentPosition by remember { mutableStateOf(0) }
 
-    // Auto-hide controles después de 5 segundos
-    LaunchedEffect(showControls) {
+    // ✅ OPTIMIZACIÓN CRÍTICA 1: ExoPlayer como estado singleton
+    // Previene crear múltiples instancias
+    val exoPlayer = remember(context) {
+        ExoPlayer.Builder(context).build().apply {
+            // Configuración inicial
+            playWhenReady = true
+        }
+    }
+
+    // ✅ OPTIMIZACIÓN CRÍTICA 2: Cleanup garantizado
+    DisposableEffect(Unit) {
+        onDispose {
+            // Liberar recursos INMEDIATAMENTE
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+            exoPlayer.release()
+        }
+    }
+
+    // Auto-hide controles
+    LaunchedEffect(showControls, playerState.isPlaying) {
         if (showControls && playerState.isPlaying) {
             delay(5000)
             showControls = false
         }
     }
 
-    // Actualizar posición actual (solo VOD)
+    // ✅ OPTIMIZACIÓN 3: Actualizar posición solo si es VOD
     LaunchedEffect(exoPlayer, config.hasProgress()) {
         if (config.hasProgress()) {
             while (true) {
-                exoPlayer?.let {
-                    currentPosition = (it.currentPosition / 1000).toInt()
-                }
+                currentPosition = (exoPlayer.currentPosition / 1000).toInt()
                 delay(1000)
             }
         }
@@ -56,26 +74,29 @@ fun UniversalPlayerScreen(
         currentPosition = currentPosition,
         onShowControls = { showControls = true },
         onPlayerStateChange = { playerState = it },
-        onPlayerReady = { exoPlayer = it },
+        onPlayerReady = { /* Ya tenemos el player */ },
+        exoPlayer = exoPlayer,
         onAction = { action ->
             when (action) {
-                PlayerAction.Back -> onNavigateBack()
+                PlayerAction.Back -> {
+                    // ✅ Detener reproducción antes de salir
+                    exoPlayer.stop()
+                    onNavigateBack()
+                }
                 PlayerAction.PlayPause -> {
-                    exoPlayer?.let {
-                        if (it.isPlaying) it.pause() else it.play()
-                    }
+                    if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
                 }
                 PlayerAction.ShowList -> onShowList()
                 PlayerAction.ShowSeasons -> onShowSeasons()
                 PlayerAction.PlayNext -> onPlayNext()
                 PlayerAction.ToggleAspectRatio -> {
-                    // TODO: Implementar cambio de aspect ratio
+                    // TODO: Implementar
                 }
                 PlayerAction.ShowSettings -> {
-                    // TODO: Mostrar panel de configuración
+                    // TODO: Implementar
                 }
                 is PlayerAction.Seek -> {
-                    exoPlayer?.seekTo(action.positionSeconds * 1000L)
+                    exoPlayer.seekTo(action.positionSeconds * 1000L)
                 }
             }
         }
@@ -91,14 +112,16 @@ private fun UniversalPlayerScreenContent(
     onShowControls: () -> Unit,
     onPlayerStateChange: (VideoPlayerState) -> Unit,
     onPlayerReady: (ExoPlayer) -> Unit,
+    exoPlayer: ExoPlayer,
     onAction: (PlayerAction) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // ===== VIDEO PLAYER (Fondo) =====
+        // ===== VIDEO PLAYER =====
         VideoPlayerComponent(
             streamUrl = config.streamUrl,
             onStateChange = onPlayerStateChange,
             onPlayerReady = onPlayerReady,
+            exoPlayer = exoPlayer, // ✅ Pasar player existente
             modifier = Modifier.fillMaxSize()
         )
 
@@ -119,7 +142,7 @@ private fun UniversalPlayerScreenContent(
                         onBackClick = { onAction(PlayerAction.Back) }
                     )
 
-                    // Controles Centrales (Opcional - solo si está pausado)
+                    // Controles Centrales
                     if (!playerState.isPlaying && !playerState.isBuffering) {
                         PlayerCenterControls(
                             isPlaying = playerState.isPlaying,
@@ -127,7 +150,7 @@ private fun UniversalPlayerScreenContent(
                         )
                     }
 
-                    // Barra Inferior Universal
+                    // Barra Inferior
                     UniversalPlayerBottomBar(
                         config = config,
                         isPlaying = playerState.isPlaying,
@@ -140,17 +163,11 @@ private fun UniversalPlayerScreenContent(
     }
 }
 
-/**
- * Barra superior adaptable
- * ⚠️ TEMPORAL: Usa PlayerTopBar sin customBadge hasta actualizarlo
- */
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 private fun UniversalPlayerTopBar(
     config: PlayerConfiguration,
     onBackClick: () -> Unit
 ) {
-    // ⚠️ VERSIÓN COMPATIBLE con PlayerTopBar antiguo
     PlayerTopBar(
         channelName = config.title,
         channelNumber = when (config.contentType) {
@@ -160,76 +177,7 @@ private fun UniversalPlayerTopBar(
         },
         categoryName = config.subtitle ?: "",
         isLive = config.contentType == PlayerContentType.LIVE_TV,
-        // ⚠️ COMENTADO hasta actualizar PlayerTopBar:
-        // customBadge = config.getBadgeText(),
+        customBadge = config.getBadgeText(),
         onBackClick = onBackClick
     )
-}
-
-// ==================== PREVIEWS ====================
-
-@Preview(device = "id:tv_4k")
-@Composable
-fun LiveTvPlayerPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        UniversalPlayerScreen(
-            config = PlayerConfiguration.forLiveTV(
-                streamUrl = "http://example.com/stream",
-                channelName = "Discovery Channel",
-                channelNumber = 101,
-                categoryName = "Documentales"
-            ),
-            onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(device = "id:tv_4k")
-@Composable
-fun MoviePlayerPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        UniversalPlayerScreen(
-            config = PlayerConfiguration.forMovie(
-                streamUrl = "http://example.com/movie",
-                movieName = "Avatar: El Camino del Agua",
-                movieId = 12345,
-                durationSeconds = 11520,
-                year = "2022",
-                genre = "Ciencia Ficción"
-            ),
-            onNavigateBack = {}
-        )
-    }
-}
-
-@Preview(device = "id:tv_4k")
-@Composable
-fun SeriesPlayerPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        UniversalPlayerScreen(
-            config = PlayerConfiguration.forSeries(
-                streamUrl = "http://example.com/episode",
-                seriesName = "Breaking Bad",
-                seriesId = 1,
-                seasonNumber = 5,
-                episodeNumber = 14,
-                episodeName = "Ozymandias",
-                durationSeconds = 2880,
-                hasNextEpisode = true
-            ),
-            onNavigateBack = {}
-        )
-    }
 }

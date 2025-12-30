@@ -4,8 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.iptvplayertv.data.preferences.UserPreferences
-import com.example.iptvplayertv.data.repository.XtreamRepository
-import com.example.iptvplayertv.presentation.home.HomeViewModel.Companion.TAG
+import com.example.iptvplayertv.data.repository.XtreamRepositoryImp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import java.text.SimpleDateFormat
@@ -16,13 +15,28 @@ import javax.inject.Inject
 @HiltViewModel
 class AccountViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
-    private val repository: XtreamRepository
+    private val repository: XtreamRepositoryImp // ← Usar versión optimizada
 ) : ViewModel() {
 
-    suspend fun fetchAccountInfo(): AccountUiModel? {
+    companion object {
+        private const val TAG = "AccountViewModel"
+    }
+
+    /**
+     * ✅ Ahora usa caché automáticamente
+     * La primera llamada va al servidor, las siguientes usan caché
+     */
+    suspend fun fetchAccountInfo(forceRefresh: Boolean = false): AccountUiModel? {
         return try {
             val credentials = userPreferences.userCredentials.firstOrNull()
+
             if (credentials != null) {
+                // Si forceRefresh, limpiar caché primero
+                if (forceRefresh) {
+                    repository.clearAllCache()
+                    Log.d(TAG, "Caché limpiado para refresh forzado")
+                }
+
                 val accountInfoResult = repository.getAccountInfo(
                     credentials.host,
                     credentials.username,
@@ -31,7 +45,7 @@ class AccountViewModel @Inject constructor(
 
                 accountInfoResult.fold(
                     onSuccess = { accountInfo ->
-                        Log.d(TAG, "✓ Información de la cuenta: $accountInfo")
+                        Log.d(TAG, "✓ Información de la cuenta obtenida")
 
                         AccountUiModel(
                             userName = credentials.username,

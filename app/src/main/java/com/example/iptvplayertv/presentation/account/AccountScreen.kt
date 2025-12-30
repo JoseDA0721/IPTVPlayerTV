@@ -19,31 +19,21 @@ fun UserInfoScreen(
     viewModel: AccountViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
+    // ✅ OPTIMIZACIÓN: Estados separados
     var accountInfo by remember { mutableStateOf<AccountUiModel?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // ✅ OPTIMIZACIÓN: Usar rememberCoroutineScope en lugar de LaunchedEffect
     val scope = rememberCoroutineScope()
 
-    // Cargar datos al iniciar
-    LaunchedEffect(Unit) {
-        isLoading = true
-        errorMessage = null
+    // ✅ CLAVE: Usar una key estable que NO cambie en cada recomposición
+    var loadKey by remember { mutableStateOf(0) }
 
-        val result = viewModel.fetchAccountInfo()
-
-        if (result != null) {
-            accountInfo = result
-        } else {
-            errorMessage = "No se pudo cargar la información"
-        }
-
-        isLoading = false
-    }
-
-    // Función para refrescar
-    fun refresh() {
-        scope.launch {
+    // ✅ OPTIMIZACIÓN: LaunchedEffect con key estable
+    // Solo se ejecuta cuando loadKey cambia (no en cada recomposición)
+    LaunchedEffect(loadKey) {
+        if (accountInfo == null) { // Solo cargar si no hay datos
             isLoading = true
             errorMessage = null
 
@@ -52,11 +42,32 @@ fun UserInfoScreen(
             if (result != null) {
                 accountInfo = result
             } else {
-                errorMessage = "No se pudo actualizar la información"
+                errorMessage = "No se pudo cargar la información"
             }
 
             isLoading = false
         }
+    }
+
+    /**
+     * ✅ Función de refresh que actualiza la key
+     * Esto dispara una nueva carga
+     */
+    suspend fun refresh(forceRefresh: Boolean = false) {
+        //kotlinx.coroutines.launch(scope.coroutineContext) {
+            isLoading = true
+            errorMessage = null
+
+            val result = viewModel.fetchAccountInfo(forceRefresh = forceRefresh)
+
+            if (result != null) {
+                accountInfo = result
+            } else {
+                errorMessage = "No se pudo actualizar la información"
+            }
+
+            isLoading = false
+        //}
     }
 
     Box(
@@ -67,7 +78,6 @@ fun UserInfoScreen(
     ) {
         when {
             isLoading -> {
-                // Loading indicator
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -84,7 +94,6 @@ fun UserInfoScreen(
             }
 
             errorMessage != null -> {
-                // Error message
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -94,7 +103,9 @@ fun UserInfoScreen(
                         color = Color(0xFFFF5555)
                     )
                     androidx.tv.material3.Button(
-                        onClick = { refresh() }
+                        onClick = {
+                            scope.launch { refresh(forceRefresh = true) }
+                        }
                     ) {
                         Text("Reintentar")
                     }
@@ -102,9 +113,22 @@ fun UserInfoScreen(
             }
 
             accountInfo != null -> {
-                // Mostrar información
                 AccountInfoCard(
-                    info = accountInfo!!
+                    info = accountInfo!!,
+                    onRefresh = {
+                        scope.launch {
+                            refresh(forceRefresh = true)
+                        }
+                    },
+                    onLogout = { /* TODO */ }
+                )
+            }
+
+            else -> {
+                // Estado inicial (no debería llegar aquí)
+                Text(
+                    text = "Esperando datos...",
+                    color = Color.White
                 )
             }
         }

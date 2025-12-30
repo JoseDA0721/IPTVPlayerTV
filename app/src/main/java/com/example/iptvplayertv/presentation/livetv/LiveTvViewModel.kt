@@ -11,6 +11,7 @@ import com.example.iptvplayertv.data.model.LiveTvLoadState
 import com.example.iptvplayertv.data.preferences.UserPreferences
 import com.example.iptvplayertv.data.repository.LiveTvRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,7 +29,7 @@ data class LiveTvState(
 
 @HiltViewModel
 class LiveTvViewModel @Inject constructor(
-    private val liveTvRepository: LiveTvRepository,
+    private val liveTvRepository: LiveTvRepository, // ← Versión optimizada
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -38,6 +39,9 @@ class LiveTvViewModel @Inject constructor(
 
     private val _state = mutableStateOf(LiveTvState())
     val state: State<LiveTvState> = _state
+
+    // ✅ Job para cancelar búsquedas en progreso
+    private var searchJob: Job? = null
 
     init {
         loadCategories()
@@ -60,6 +64,7 @@ class LiveTvViewModel @Inject constructor(
                 // Guardar credenciales en el estado
                 _state.value = _state.value.copy(credentials = credentials)
 
+                // ✅ OPTIMIZACIÓN: Cargar categorías desde caché
                 val result = liveTvRepository.getCategories(
                     host = credentials.host,
                     user = credentials.username,
@@ -73,10 +78,9 @@ class LiveTvViewModel @Inject constructor(
                             loadState = LiveTvLoadState.Success()
                         )
 
-                        // Seleccionar primera categoría automáticamente
-                        if (categories.isNotEmpty()) {
-                            selectCategory(categories.first())
-                        }
+                        // ✅ CAMBIO: NO seleccionar automáticamente
+                        // Deja que el usuario elija qué ver primero
+                        Log.d(TAG, "✓ ${categories.size} categorías cargadas. Esperando selección del usuario.")
                     },
                     onFailure = { exception ->
                         Log.e(TAG, "Error cargando categorías", exception)
@@ -96,11 +100,34 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
+    /**
+     * ✅ OPTIMIZACIÓN: Verificar caché antes de cargar
+     */
     fun selectCategory(category: LiveCategory) {
+        // Si ya está seleccionada, no hacer nada
         if (_state.value.selectedCategory?.categoryId == category.categoryId) {
-            return // Ya está seleccionada
+            Log.d(TAG, "Categoría ${category.categoryName} ya está seleccionada")
+            return
         }
 
+        // Verificar si tenemos canales en caché para esta categoría
+        val cachedChannels = liveTvRepository.getCachedChannelsForCategory(category.categoryId)
+
+        if (cachedChannels != null) {
+            Log.d(TAG, "✓ Usando ${cachedChannels.size} canales desde caché para ${category.categoryName}")
+
+            _state.value = _state.value.copy(
+                selectedCategory = category,
+                channels = cachedChannels,
+                filteredChannels = cachedChannels,
+                searchQuery = "",
+                selectedChannel = null,
+                loadState = LiveTvLoadState.Success()
+            )
+            return
+        }
+
+        // Si no hay caché, cargar desde servidor
         _state.value = _state.value.copy(
             selectedCategory = category,
             channels = emptyList(),
@@ -158,7 +185,6 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
-    // Agrega esta función privada en tu ViewModel para reutilizar la lógica
     private fun updateStateWithFilter(
         currentChannels: List<LiveChannelDetail>,
         query: String
@@ -166,13 +192,17 @@ class LiveTvViewModel @Inject constructor(
         val filtered = if (query.isBlank()) {
             currentChannels
         } else {
-            currentChannels.filter { it.name.contains(query, ignoreCase = true) }
+            // ✅ OPTIMIZACIÓN: Filtro case-insensitive más eficiente
+            val lowerQuery = query.lowercase()
+            currentChannels.filter {
+                it.name.lowercase().contains(lowerQuery)
+            }
         }
 
         return _state.value.copy(
             channels = currentChannels,
             searchQuery = query,
-            filteredChannels = filtered // Actualizamos la lista filtrada
+            filteredChannels = filtered
         )
     }
 
@@ -180,14 +210,69 @@ class LiveTvViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedChannel = channel)
     }
 
+    /**
+     * ✅ OPTIMIZACIÓN: Búsqueda con debounce
+     * Cancela búsquedas anteriores si el usuario sigue escribiendo
+     */
     fun updateSearchQuery(query: String) {
-        _state.value = updateStateWithFilter(_state.value.channels, query)
+        // Cancelar búsqueda anterior si existe
+        searchJob?.cancel()
+
+        // Si la búsqueda está vacía, aplicar inmediatamente
+        if (query.isBlank()) {
+            _state.value = updateStateWithFilter(_state.value.channels, query)
+            return
+        }
+
+        // Para búsquedas largas, aplicar con delay (debounce)
+        searchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(300) // 300ms de debounce
+            _state.value = updateStateWithFilter(_state.value.channels, query)
+        }
     }
 
-    fun refresh() {
-        liveTvRepository.clearCache()
+    /**
+     * ✅ Refresh inteligente
+     */
+    fun refresh(forceRefresh: Boolean = false) {
+        if (forceRefresh) {
+            liveTvRepository.clearCache()
+            Log.d(TAG, "Caché de LiveTV limpiado")
+        }
+
+        // Recargar categorías
         loadCategories()
+
+        // Si había una categoría seleccionada, recargarla
+        _state.value.selectedCategory?.let { category ->
+            loadChannelsByCategory(category.categoryId)
+        }
     }
 
+    /**
+     * ✅ Precargar canales de categorías populares
+     * Llamar desde HomeScreen antes de navegar a LiveTV
+     */
+    suspend fun preloadPopularCategories() {
+        val credentials = userPreferences.userCredentials.firstOrNull() ?: return
 
+        // Cargar las primeras 3 categorías en segundo plano
+        val result = liveTvRepository.getCategories(
+            credentials.host,
+            credentials.username,
+            credentials.password
+        )
+
+        result.onSuccess { categories ->
+            categories.take(3).forEach { category ->
+                liveTvRepository.getChannelsByCategory(
+                    credentials.host,
+                    credentials.username,
+                    credentials.password,
+                    category.categoryId
+                )
+            }
+            Log.d(TAG, "✓ Precarga de 3 categorías completada")
+        }
+    }
 }

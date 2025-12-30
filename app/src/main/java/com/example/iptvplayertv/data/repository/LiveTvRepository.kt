@@ -4,7 +4,8 @@ import android.util.Log
 import com.example.iptvplayertv.data.model.LiveCategory
 import com.example.iptvplayertv.data.model.LiveChannelDetail
 import com.example.iptvplayertv.data.remote.XtreamApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,6 +17,7 @@ interface LiveTvRepository {
         pass: String,
         categoryId: String
     ): Result<List<LiveChannelDetail>>
+    fun getCachedChannelsForCategory(categoryId: String): List<LiveChannelDetail>?
     fun clearCache()
 }
 
@@ -26,12 +28,28 @@ class LiveTvRepositoryImpl @Inject constructor(
 
     companion object {
         private const val TAG = "LiveTvRepository"
-        private const val CACHE_DURATION_MS = 5 * 60 * 1000L // 5 minutos
+        private const val CACHE_DURATION_MS = 10 * 60 * 1000L // 10 minutos
+        private const val MAX_CACHED_CATEGORIES = 10 // Máximo de categorías en caché
     }
 
-    // Caché en memoria
+    // ✅ Mutex para thread-safety
+    private val cacheMutex = Mutex()
+
+    // Caché de categorías
     private var categoriesCache: Pair<Long, List<LiveCategory>>? = null
-    private val channelsCache = mutableMapOf<String, Pair<Long, List<LiveChannelDetail>>>()
+
+    // ✅ OPTIMIZACIÓN: LRU Cache para canales (elimina las más antiguas)
+    private val channelsCache = object : LinkedHashMap<String, Pair<Long, List<LiveChannelDetail>>>(
+        MAX_CACHED_CATEGORIES,
+        0.75f,
+        true // accessOrder = true (LRU)
+    ) {
+        override fun removeEldestEntry(
+            eldest: MutableMap.MutableEntry<String, Pair<Long, List<LiveChannelDetail>>>?
+        ): Boolean {
+            return size > MAX_CACHED_CATEGORIES
+        }
+    }
 
     override suspend fun getCategories(
         host: String,
@@ -39,11 +57,13 @@ class LiveTvRepositoryImpl @Inject constructor(
         pass: String
     ): Result<List<LiveCategory>> {
         return try {
-            // Verificar caché
-            val cached = categoriesCache
-            if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
-                Log.d(TAG, "✓ Categorías desde caché (${cached.second.size})")
-                return Result.success(cached.second)
+            // ✅ Thread-safe cache check
+            cacheMutex.withLock {
+                val cached = categoriesCache
+                if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
+                    Log.d(TAG, "✓ Categorías desde caché (${cached.second.size})")
+                    return Result.success(cached.second)
+                }
             }
 
             val cleanHost = host.trim().removeSuffix("/")
@@ -60,17 +80,37 @@ class LiveTvRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val categories = response.body() ?: emptyList()
 
-                // Guardar en caché
-                categoriesCache = Pair(System.currentTimeMillis(), categories)
+                // ✅ Thread-safe cache update
+                cacheMutex.withLock {
+                    categoriesCache = Pair(System.currentTimeMillis(), categories)
+                }
 
                 Log.d(TAG, "✓ Categorías obtenidas: ${categories.size}")
                 Result.success(categories)
             } else {
                 Log.e(TAG, "✗ Error obteniendo categorías: ${response.code()}")
+
+                // ✅ Retornar caché antigua si hay error
+                cacheMutex.withLock {
+                    categoriesCache?.let {
+                        Log.w(TAG, "Retornando caché antigua debido a error")
+                        return Result.success(it.second)
+                    }
+                }
+
                 Result.failure(Exception("Error del servidor: ${response.code()}"))
             }
         } catch (e: Exception) {
             Log.e(TAG, "✗ Excepción obteniendo categorías", e)
+
+            // ✅ Retornar caché antigua en caso de excepción
+            cacheMutex.withLock {
+                categoriesCache?.let {
+                    Log.w(TAG, "Retornando caché antigua debido a excepción")
+                    return Result.success(it.second)
+                }
+            }
+
             Result.failure(e)
         }
     }
@@ -82,17 +122,19 @@ class LiveTvRepositoryImpl @Inject constructor(
         categoryId: String
     ): Result<List<LiveChannelDetail>> {
         return try {
-            // Verificar caché
-            val cached = channelsCache[categoryId]
-            if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
-                Log.d(TAG, "✓ Canales desde caché para categoría $categoryId (${cached.second.size})")
-                return Result.success(cached.second)
+            // ✅ Thread-safe cache check
+            cacheMutex.withLock {
+                val cached = channelsCache[categoryId]
+                if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
+                    Log.d(TAG, "✓ Canales desde caché para categoría $categoryId (${cached.second.size})")
+                    return Result.success(cached.second)
+                }
             }
 
             val cleanHost = host.trim().removeSuffix("/")
             val url = "$cleanHost/player_api.php"
 
-            Log.d(TAG, "Obteniendo canales de categoría $categoryId...")
+            Log.d(TAG, "Obteniendo canales de categoría $categoryId desde servidor...")
 
             val response = api.getLiveStreamsByCategory(
                 url = url,
@@ -104,18 +146,55 @@ class LiveTvRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val channels = response.body() ?: emptyList()
 
-                // Guardar en caché
-                channelsCache[categoryId] = Pair(System.currentTimeMillis(), channels)
+                // ✅ Thread-safe cache update
+                cacheMutex.withLock {
+                    channelsCache[categoryId] = Pair(System.currentTimeMillis(), channels)
+                }
 
                 Log.d(TAG, "✓ Canales obtenidos: ${channels.size}")
                 Result.success(channels)
             } else {
                 Log.e(TAG, "✗ Error obteniendo canales: ${response.code()}")
+
+                // ✅ Retornar caché antigua si hay error
+                cacheMutex.withLock {
+                    channelsCache[categoryId]?.let {
+                        Log.w(TAG, "Retornando caché antigua debido a error")
+                        return Result.success(it.second)
+                    }
+                }
+
                 Result.failure(Exception("Error del servidor: ${response.code()}"))
             }
         } catch (e: Exception) {
             Log.e(TAG, "✗ Excepción obteniendo canales", e)
+
+            // ✅ Retornar caché antigua en caso de excepción
+            cacheMutex.withLock {
+                channelsCache[categoryId]?.let {
+                    Log.w(TAG, "Retornando caché antigua debido a excepción")
+                    return Result.success(it.second)
+                }
+            }
+
             Result.failure(e)
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener canales desde caché sin esperar
+     * Útil para verificar si ya tenemos datos antes de hacer una llamada
+     */
+    override fun getCachedChannelsForCategory(categoryId: String): List<LiveChannelDetail>? {
+        val cached = channelsCache[categoryId] ?: return null
+        val age = System.currentTimeMillis() - cached.first
+
+        return if (age < CACHE_DURATION_MS) {
+            Log.d(TAG, "✓ Canales en caché para $categoryId (edad: ${age / 1000}s)")
+            cached.second
+        } else {
+            Log.d(TAG, "✗ Caché expirado para $categoryId")
+            null
         }
     }
 
@@ -123,5 +202,28 @@ class LiveTvRepositoryImpl @Inject constructor(
         categoriesCache = null
         channelsCache.clear()
         Log.d(TAG, "✓ Caché limpiado")
+    }
+
+    /**
+     * ✅ NUEVO: Obtener estadísticas de caché
+     */
+    fun getCacheStats(): Map<String, Any> {
+        val categoriesAge = categoriesCache?.let {
+            (System.currentTimeMillis() - it.first) / 1000
+        }
+
+        val channelsCacheInfo = channelsCache.mapValues { (_, value) ->
+            mapOf(
+                "count" to value.second.size,
+                "age_seconds" to (System.currentTimeMillis() - value.first) / 1000
+            )
+        }
+
+        return mapOf(
+            "categories_age_seconds" to (categoriesAge ?: "no cache"),
+            "categories_count" to (categoriesCache?.second?.size ?: 0),
+            "channels_cache_size" to channelsCache.size,
+            "channels_details" to channelsCacheInfo
+        )
     }
 }

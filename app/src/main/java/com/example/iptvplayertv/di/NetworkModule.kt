@@ -4,7 +4,7 @@ import com.example.iptvplayertv.data.remote.XtreamApi
 import com.example.iptvplayertv.data.repository.LiveTvRepository
 import com.example.iptvplayertv.data.repository.LiveTvRepositoryImpl
 import com.example.iptvplayertv.data.repository.XtreamRepository
-import com.example.iptvplayertv.data.repository.XtreamRepositoryImpl
+import com.example.iptvplayertv.data.repository.XtreamRepositoryOptimized
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,12 +32,19 @@ object NetworkModule {
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
+            // ✅ Optimización: Pool de conexiones más eficiente
+            .connectionPool(
+                okhttp3.ConnectionPool(
+                    maxIdleConnections = 5,
+                    keepAliveDuration = 5,
+                    timeUnit = TimeUnit.MINUTES
+                )
+            )
             .dns(object : okhttp3.Dns {
                 override fun lookup(hostname: String): List<java.net.InetAddress> {
                     return try {
                         okhttp3.Dns.SYSTEM.lookup(hostname)
                     } catch (e: Exception) {
-                        // Intentar con DNS de Google como fallback
                         java.net.InetAddress.getAllByName(hostname).toList()
                     }
                 }
@@ -49,7 +56,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://placeholder.com/") // Base URL temporal
+            .baseUrl("http://placeholder.com/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -61,10 +68,22 @@ object NetworkModule {
         return retrofit.create(XtreamApi::class.java)
     }
 
+    /**
+     * ✅ IMPORTANTE: Proveer la versión optimizada
+     */
     @Provides
     @Singleton
     fun provideXtreamRepository(api: XtreamApi): XtreamRepository {
-        return XtreamRepositoryImpl(api)
+        return XtreamRepositoryOptimized(api)
+    }
+
+    /**
+     * ✅ También proveer como XtreamRepositoryOptimized para inyección directa
+     */
+    @Provides
+    @Singleton
+    fun provideXtreamRepositoryOptimized(api: XtreamApi): XtreamRepositoryOptimized {
+        return XtreamRepositoryOptimized(api)
     }
 
     @Provides

@@ -3,18 +3,24 @@ package com.example.iptvplayertv
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
+import com.example.iptvplayertv.data.local.dao.SessionDao
+import com.example.iptvplayertv.data.preferences.UserPreferences
 import com.example.iptvplayertv.presentation.account.AccountViewModel
 import com.example.iptvplayertv.presentation.account.UserInfoScreen
 import com.example.iptvplayertv.presentation.home.HomeScreen
@@ -24,15 +30,22 @@ import com.example.iptvplayertv.presentation.livetv.LiveTvViewModel
 import com.example.iptvplayertv.presentation.login.LoginScreen
 import com.example.iptvplayertv.presentation.login.LoginViewModel
 import com.example.iptvplayertv.presentation.player.PlayerConfiguration
+import com.example.iptvplayertv.presentation.player.PlayerSharedViewModel
 import com.example.iptvplayertv.presentation.player.UniversalPlayerScreen
 import com.example.iptvplayertv.ui.theme.IPTVPlayerTVTheme
 import dagger.hilt.android.AndroidEntryPoint
-import java.net.URLDecoder
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.flow.firstOrNull
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var sessionDao: SessionDao
+
+    @Inject
+    lateinit var userPreferences: UserPreferences
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,20 +55,68 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    IPTVPlayerApp()
+                    // ✅ NUEVO: Splash Screen mientras verifica sesión
+                    SplashScreenWithAutoLogin(
+                        sessionDao = sessionDao,
+                        userPreferences = userPreferences
+                    )
                 }
             }
         }
     }
 }
 
+/**
+ * ✅ Pantalla de carga inicial que verifica sesión
+ */
 @Composable
-fun IPTVPlayerApp() {
+fun SplashScreenWithAutoLogin(
+    sessionDao: SessionDao,
+    userPreferences: UserPreferences
+) {
+    var isChecking by remember { mutableStateOf(true) }
+    var hasValidSession by remember { mutableStateOf(false) }
+
+    // ✅ Verificar sesión una sola vez
+    LaunchedEffect(Unit) {
+        val session = sessionDao.getSessionOnce()
+        val credentials = userPreferences.userCredentials.firstOrNull()
+
+        hasValidSession = session != null &&
+                session.isLoggedIn &&
+                session.autoLoginEnabled &&
+                credentials != null
+
+        isChecking = false
+    }
+
+    if (isChecking) {
+        // Mostrar splash screen
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF0D0D0D)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFFD97706))
+        }
+    } else {
+        // Mostrar navegación
+        IPTVPlayerApp(startWithHome = hasValidSession)
+    }
+}
+
+@Composable
+fun IPTVPlayerApp(startWithHome: Boolean = false) {
     val navController = rememberNavController()
+    val playerSharedViewModel: PlayerSharedViewModel = hiltViewModel()
+
+    // ✅ Definir ruta inicial según si hay sesión
+    val startDestination = if (startWithHome) "home" else "login"
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
         composable("login") {
             val viewModel: LoginViewModel = hiltViewModel()
@@ -82,6 +143,7 @@ fun IPTVPlayerApp() {
                     navController.navigate("account")
                 },
                 onLogout = {
+                    // ✅ Limpiar sesión al cerrar sesión
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
@@ -107,61 +169,33 @@ fun IPTVPlayerApp() {
                     navController.popBackStack()
                 },
                 onNavigateToPlayer = { streamUrl, channelName, channelNumber ->
-                    val encodedUrl = URLEncoder.encode(streamUrl, StandardCharsets.UTF_8.toString())
-                    val encodedName = URLEncoder.encode(channelName, StandardCharsets.UTF_8.toString())
-                    navController.navigate("player/$encodedUrl/$encodedName/$channelNumber")
+                    playerSharedViewModel.setPlayerConfig(
+                        PlayerConfiguration.forLiveTV(
+                            streamUrl = streamUrl,
+                            channelName = channelName,
+                            channelNumber = channelNumber,
+                            categoryName = ""
+                        )
+                    )
+                    navController.navigate("player")
                 }
             )
         }
 
-        composable(
-            route = "player/{contentType}/{streamUrl}/{title}/{subtitle}",
-            arguments = listOf(
-                navArgument("contentType") { type = NavType.StringType },
-                navArgument("streamUrl") { type = NavType.StringType },
-                navArgument("title") { type = NavType.StringType },
-                navArgument("subtitle") { type = NavType.StringType; nullable = true }
-            )
-        ) { backStackEntry ->
-            val contentTypeStr = backStackEntry.arguments?.getString("contentType") ?: ""
-            val streamUrl = URLDecoder.decode(
-                backStackEntry.arguments?.getString("streamUrl") ?: "",
-                StandardCharsets.UTF_8.toString()
-            )
-            val title = URLDecoder.decode(
-                backStackEntry.arguments?.getString("title") ?: "",
-                StandardCharsets.UTF_8.toString()
-            )
+        composable("player") {
+            val config = playerSharedViewModel.currentConfig
 
-            val config = when (contentTypeStr) {
-                "live" -> PlayerConfiguration.forLiveTV(
-                    streamUrl = streamUrl,
-                    channelName = title,
-                    channelNumber = 101, // TODO: Pasar como parámetro
-                    categoryName = ""
+            if (config != null) {
+                UniversalPlayerScreen(
+                    config = config,
+                    onNavigateBack = {
+                        playerSharedViewModel.clearConfig()
+                        navController.popBackStack()
+                    }
                 )
-                "movie" -> PlayerConfiguration.forMovie(
-                    streamUrl = streamUrl,
-                    movieName = title,
-                    movieId = 0,
-                    durationSeconds = 7200 // TODO: Obtener de API
-                )
-                "series" -> PlayerConfiguration.forSeries(
-                    streamUrl = streamUrl,
-                    seriesName = title,
-                    seriesId = 0,
-                    seasonNumber = 1,
-                    episodeNumber = 1,
-                    episodeName = "",
-                    durationSeconds = 2400
-                )
-                else -> PlayerConfiguration.forLiveTV(streamUrl, title, 0, "")
+            } else {
+                navController.popBackStack()
             }
-
-            UniversalPlayerScreen(
-                config = config,
-                onNavigateBack = { navController.popBackStack() }
-            )
         }
     }
 }

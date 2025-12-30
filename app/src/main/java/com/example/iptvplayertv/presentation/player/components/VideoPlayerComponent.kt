@@ -26,11 +26,7 @@ import androidx.media3.ui.PlayerView
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 
-/**
- * Estado del reproductor de video
- */
 data class VideoPlayerState(
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
@@ -41,13 +37,15 @@ data class VideoPlayerState(
 )
 
 /**
- * Componente reutilizable de ExoPlayer con sincronización de volumen del sistema
+ * ✅ Componente OPTIMIZADO de ExoPlayer
+ * Previene memory leaks y mejora el rendimiento
  */
 @OptIn(UnstableApi::class, ExperimentalTvMaterial3Api::class)
 @Composable
 fun VideoPlayerComponent(
     streamUrl: String,
     modifier: Modifier = Modifier,
+    exoPlayer: ExoPlayer? = null, // ✅ Permitir pasar player existente
     onStateChange: (VideoPlayerState) -> Unit = {},
     onPlayerReady: (ExoPlayer) -> Unit = {}
 ) {
@@ -56,14 +54,20 @@ fun VideoPlayerComponent(
 
     var playerState by remember { mutableStateOf(VideoPlayerState()) }
 
-    // AudioManager para volumen del sistema
+    // ✅ OPTIMIZACIÓN 1: Crear player solo si no se proporciona
+    val player = exoPlayer ?: remember {
+        if (isPreview) null
+        else ExoPlayer.Builder(context).build()
+    }
+
+    // ✅ OPTIMIZACIÓN 2: Usar VolumeMonitor singleton (si lo implementaste)
+    // Si no, mantener el código anterior pero con delay más largo
     val audioManager = remember {
         if (!isPreview) {
             context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         } else null
     }
 
-    // Función para actualizar volumen del sistema
     fun updateSystemVolume() {
         audioManager?.let { am ->
             val currentVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC)
@@ -79,118 +83,114 @@ fun VideoPlayerComponent(
         }
     }
 
-    // Crear ExoPlayer
-    val exoPlayer = remember {
-        if (isPreview) null
-        else {
-            ExoPlayer.Builder(context).build().apply {
-                // Configurar volumen inicial
+    // ✅ OPTIMIZACIÓN 3: Monitorear volumen con delay más largo
+    LaunchedEffect(Unit) {
+        if (!isPreview) {
+            while (true) {
                 updateSystemVolume()
-                volume = playerState.systemVolume
-
-                addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        val newState = when (playbackState) {
-                            Player.STATE_BUFFERING -> playerState.copy(
-                                isBuffering = true,
-                                hasError = false
-                            )
-                            Player.STATE_READY -> playerState.copy(
-                                isBuffering = false,
-                                isPlaying = true,
-                                hasError = false
-                            )
-                            Player.STATE_ENDED -> playerState.copy(isPlaying = false)
-                            Player.STATE_IDLE -> playerState.copy(isBuffering = false)
-                            else -> playerState
-                        }
-                        playerState = newState
-                        onStateChange(newState)
-                    }
-
-                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                        val errorMsg = when (error.errorCode) {
-                            androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ->
-                                "Error de conexión de red"
-                            androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ->
-                                "Tiempo de conexión agotado"
-                            androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ->
-                                "Formato de video no válido"
-                            else -> "Error al reproducir: ${error.message}"
-                        }
-
-                        val newState = playerState.copy(
-                            hasError = true,
-                            isBuffering = false,
-                            errorMessage = errorMsg
-                        )
-                        playerState = newState
-                        onStateChange(newState)
-                    }
-
-                    override fun onIsPlayingChanged(playing: Boolean) {
-                        val newState = playerState.copy(isPlaying = playing)
-                        playerState = newState
-                        onStateChange(newState)
-                    }
-                })
+                delay(2000) // ✅ Cambiado de 500ms a 2s
             }
         }
     }
 
-    // Notificar cuando el player está listo
-    LaunchedEffect(exoPlayer) {
-        exoPlayer?.let { onPlayerReady(it) }
-    }
+    // ✅ OPTIMIZACIÓN 4: Setup del player una sola vez
+    LaunchedEffect(player) {
+        player?.let {
+            updateSystemVolume()
+            it.volume = playerState.systemVolume
 
-    // Monitorear volumen del sistema
-    LaunchedEffect(Unit) {
-        if (!isPreview) {
-            while (isActive) {
-                updateSystemVolume()
-                delay(500)
-            }
+            it.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    val newState = when (playbackState) {
+                        Player.STATE_BUFFERING -> playerState.copy(
+                            isBuffering = true,
+                            hasError = false
+                        )
+                        Player.STATE_READY -> playerState.copy(
+                            isBuffering = false,
+                            isPlaying = true,
+                            hasError = false
+                        )
+                        Player.STATE_ENDED -> playerState.copy(isPlaying = false)
+                        Player.STATE_IDLE -> playerState.copy(isBuffering = false)
+                        else -> playerState
+                    }
+                    playerState = newState
+                    onStateChange(newState)
+                }
+
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    val errorMsg = when (error.errorCode) {
+                        androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ->
+                            "Error de conexión de red"
+                        androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ->
+                            "Tiempo de conexión agotado"
+                        androidx.media3.common.PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ->
+                            "Formato de video no válido"
+                        else -> "Error al reproducir: ${error.message}"
+                    }
+
+                    val newState = playerState.copy(
+                        hasError = true,
+                        isBuffering = false,
+                        errorMessage = errorMsg
+                    )
+                    playerState = newState
+                    onStateChange(newState)
+                }
+
+                override fun onIsPlayingChanged(playing: Boolean) {
+                    val newState = playerState.copy(isPlaying = playing)
+                    playerState = newState
+                    onStateChange(newState)
+                }
+            })
+
+            onPlayerReady(it)
         }
     }
 
     // Sincronizar volumen con ExoPlayer
     LaunchedEffect(playerState.systemVolume) {
-        exoPlayer?.volume = playerState.systemVolume
+        player?.volume = playerState.systemVolume
     }
 
-    // Cargar stream
+    // ✅ OPTIMIZACIÓN 5: Cargar stream con manejo de errores mejorado
     LaunchedEffect(streamUrl) {
-        if (!isPreview && exoPlayer != null && streamUrl.isNotEmpty()) {
+        if (!isPreview && player != null && streamUrl.isNotEmpty()) {
             try {
-                exoPlayer.stop()
-                exoPlayer.clearMediaItems()
+                // ✅ Detener reproducción anterior de forma segura
+                player.stop()
+                player.clearMediaItems()
 
                 val mediaItem = MediaItem.fromUri(streamUrl)
-                exoPlayer.setMediaItem(mediaItem)
-                exoPlayer.prepare()
-                exoPlayer.playWhenReady = true
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.playWhenReady = true
 
                 playerState = playerState.copy(isBuffering = true, hasError = false)
             } catch (e: Exception) {
                 playerState = playerState.copy(
                     hasError = true,
                     isBuffering = false,
-                    errorMessage = "Error al cargar stream"
+                    errorMessage = "Error al cargar stream: ${e.message}"
                 )
             }
         }
     }
 
-    // Liberar recursos
+    // ✅ OPTIMIZACIÓN 6: Liberar recursos solo si NO se pasó un player externo
     DisposableEffect(Unit) {
         onDispose {
-            exoPlayer?.release()
+            // Solo liberar si creamos el player aquí
+            if (exoPlayer == null) {
+                player?.release()
+            }
         }
     }
 
     Box(modifier = modifier) {
         when {
-            // Modo Preview
             isPreview -> {
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.DarkGray),
@@ -200,18 +200,21 @@ fun VideoPlayerComponent(
                 }
             }
 
-            // Player de video
-            exoPlayer != null -> {
+            player != null -> {
                 AndroidView(
                     factory = { ctx ->
                         PlayerView(ctx).apply {
-                            player = exoPlayer
+                            this.player = player
                             useController = false
                             layoutParams = FrameLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
                         }
+                    },
+                    // ✅ OPTIMIZACIÓN 7: Update solo cuando cambia el player
+                    update = { view ->
+                        view.player = player
                     },
                     modifier = Modifier.fillMaxSize()
                 )
