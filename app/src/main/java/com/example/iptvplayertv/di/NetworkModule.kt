@@ -1,5 +1,7 @@
 package com.example.iptvplayertv.di
 
+import com.example.iptvplayertv.data.local.dao.AccountInfoDao
+import com.example.iptvplayertv.data.local.dao.ContentCountsDao
 import com.example.iptvplayertv.data.remote.XtreamApi
 import com.example.iptvplayertv.data.repository.LiveTvRepository
 import com.example.iptvplayertv.data.repository.LiveTvRepositoryImpl
@@ -63,13 +65,18 @@ object NetworkModule {
         return retrofit.create(XtreamApi::class.java)
     }
 
+    // ✅ FIX: Inyectar los DAOs correctamente
     @Provides
     @Singleton
-    fun provideXtreamRepository(api: XtreamApi): XtreamRepository {
+    fun provideXtreamRepository(
+        api: XtreamApi,
+        contentCountsDao: ContentCountsDao,
+        accountInfoDao: AccountInfoDao
+    ): XtreamRepository {
         return XtreamRepositoryImp(
-            api,
-            contentCountsDao = TODO(),
-            accountInfoDao = TODO()
+            api = api,
+            contentCountsDao = contentCountsDao,
+            accountInfoDao = accountInfoDao
         )
     }
 
