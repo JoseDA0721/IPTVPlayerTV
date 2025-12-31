@@ -25,7 +25,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "iptv_database"
         )
-            .fallbackToDestructiveMigration() // ⚠️ Solo para desarrollo
+            .fallbackToDestructiveMigration(false) // ⚠️ Solo para desarrollo
             .build()
     }
 

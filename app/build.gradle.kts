@@ -98,3 +98,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+configurations.all {
+    resolutionStrategy {
+        // Forzamos una versión de SQLite que sabemos que funciona bien en Windows 10/11
+        force("org.xerial:sqlite-jdbc:3.41.2.2")
+    }
+}
