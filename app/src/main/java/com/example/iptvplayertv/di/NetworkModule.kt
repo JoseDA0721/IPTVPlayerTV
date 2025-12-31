@@ -7,6 +7,9 @@ import com.example.iptvplayertv.data.repository.LiveTvRepository
 import com.example.iptvplayertv.data.repository.LiveTvRepositoryImpl
 import com.example.iptvplayertv.data.repository.XtreamRepository
 import com.example.iptvplayertv.data.repository.XtreamRepositoryImp
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.Strictness
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +26,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setStrictness(Strictness.LENIENT)// <--- ESTO ES LA CLAVE: Permite JSON mal formado
+            .create()
+    }
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
@@ -36,26 +45,24 @@ object NetworkModule {
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
-            .dns(object : Dns {
-                override fun lookup(hostname: String): List<InetAddress> {
-                    return try {
-                        Dns.SYSTEM.lookup(hostname)
-                    } catch (e: Exception) {
-                        // Intentar con DNS de Google como fallback
-                        InetAddress.getAllByName(hostname).toList()
-                    }
+            .dns { hostname ->
+                try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (_: Exception) {
+                    // Intentar con DNS de Google como fallback
+                    InetAddress.getAllByName(hostname).toList()
                 }
-            })
+            }
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit { // <--- Agrega parámetro gson
         return Retrofit.Builder()
-            .baseUrl("http://placeholder.com/") // Base URL temporal
+            .baseUrl("http://placeholder.com/")
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson)) // <--- Usa la instancia lenient
             .build()
     }
 

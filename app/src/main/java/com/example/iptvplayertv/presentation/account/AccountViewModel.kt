@@ -1,6 +1,5 @@
 package com.example.iptvplayertv.presentation.account
 
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.iptvplayertv.data.preferences.UserPreferences
@@ -11,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @HiltViewModel
 class AccountViewModel @Inject constructor(
@@ -49,7 +49,7 @@ class AccountViewModel @Inject constructor(
 
                         AccountUiModel(
                             userName = credentials.username,
-                            hostUrl = Uri.parse(credentials.host).host ?: "",
+                            hostUrl = credentials.host.toUri().host ?: "",
                             creationDateFormatted = formatExpDate(accountInfo.userInfo.createdAt),
                             expiryDateFormatted = formatExpDate(accountInfo.userInfo.expDate),
                             isTrial = accountInfo.userInfo.isTrial.equals("1", ignoreCase = true),
@@ -80,9 +80,9 @@ class AccountViewModel @Inject constructor(
 
         return try {
             val date = Date(timestamp.toLong() * 1000)
-            val format = SimpleDateFormat("MMMM dd, yyyy", Locale("es", "ES"))
+            val format = SimpleDateFormat("MMMM dd, yyyy", Locale.forLanguageTag("es-ES"))
             format.format(date)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             timestamp
         }
     }

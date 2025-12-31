@@ -177,7 +177,14 @@ class LiveTvRepositoryImpl @Inject constructor(
                 }
             }
 
-            Result.failure(e)
+            if (e is java.io.EOFException || e is com.google.gson.stream.MalformedJsonException) {
+                Log.w(TAG, "⚠ Error de datos (EOF/Json) en categoría $categoryId. Retornando lista vacía para evitar crash.")
+                return Result.success(emptyList())
+            }
+
+            return Result.success(emptyList())
+
+            //Result.failure(e)
         }
     }
 

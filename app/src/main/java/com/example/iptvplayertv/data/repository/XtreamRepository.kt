@@ -210,7 +210,8 @@ class XtreamRepositoryImp @Inject constructor(
                 }
             }
 
-            Result.failure(e)
+            Log.e(TAG, "Fallo total obteniendo contadores. Retornando valores vacíos para evitar crash.")
+            Result.success(ContentCounts(0, 0, 0, System.currentTimeMillis()))
         }
     }
 

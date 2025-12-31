@@ -13,6 +13,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.VolumeMute
@@ -500,9 +502,9 @@ private fun VideoPlayerClickableArea(
                         ) {
                             Icon(
                                 imageVector = if (isMuted)
-                                    Icons.Default.VolumeMute
+                                    Icons.AutoMirrored.Filled.VolumeMute
                                 else
-                                    Icons.Default.VolumeUp,
+                                    Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "Volumen",
                                 tint = if (isMuted) Color(0xFFFF5555) else Color(0xFF4CAF50),
                                 modifier = Modifier.size(14.dp)

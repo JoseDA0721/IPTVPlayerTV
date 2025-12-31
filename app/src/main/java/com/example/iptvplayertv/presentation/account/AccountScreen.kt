@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Text
 import com.example.iptvplayertv.presentation.account.components.AccountInfoCard
 import kotlinx.coroutines.launch
@@ -28,7 +28,7 @@ fun UserInfoScreen(
     val scope = rememberCoroutineScope()
 
     // ✅ CLAVE: Usar una key estable que NO cambie en cada recomposición
-    var loadKey by remember { mutableStateOf(0) }
+    var loadKey by remember { mutableIntStateOf(0) }
 
     // ✅ OPTIMIZACIÓN: LaunchedEffect con key estable
     // Solo se ejecuta cuando loadKey cambia (no en cada recomposición)

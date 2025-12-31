@@ -34,7 +34,11 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-            freeCompilerArgs.add("-opt-in=androidx.tv.material3.ExperimentalTvMaterial3Api")
+            // Combined both arguments here:
+            freeCompilerArgs.addAll(
+                "-opt-in=androidx.tv.material3.ExperimentalTvMaterial3Api",
+                "-XXLanguage:+PropertyParamAnnotationDefaultTargetMode"
+            )
         }
     }
     buildFeatures {
@@ -65,6 +69,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Retrofit
     implementation(libs.retrofit)

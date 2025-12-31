@@ -95,7 +95,7 @@ class HomeViewModel @Inject constructor(
 
         return try {
             val date = Date(timestamp.toLong() * 1000)
-            val format = SimpleDateFormat("MMMM dd, yyyy", Locale("es", "ES"))
+            val format = SimpleDateFormat("MMMM dd, yyyy", Locale.forLanguageTag("es-ES"))
             format.format(date)
         } catch (_: Exception) {
             timestamp
