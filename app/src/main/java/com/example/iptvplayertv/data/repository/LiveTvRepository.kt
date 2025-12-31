@@ -28,7 +28,8 @@ class LiveTvRepositoryImpl @Inject constructor(
 
     companion object {
         private const val TAG = "LiveTvRepository"
-        private const val CACHE_DURATION_MS = 10 * 60 * 1000L // 10 minutos
+        private const val CATEGORIES_CACHE_MS = 10 * 60 * 1000L // 24 Horas
+        private const val CHANNELS_CACHE_MS = 6 * 60 * 60 * 1000L // 6 Horas
         private const val MAX_CACHED_CATEGORIES = 10 // Máximo de categorías en caché
     }
 
@@ -60,7 +61,7 @@ class LiveTvRepositoryImpl @Inject constructor(
             // ✅ Thread-safe cache check
             cacheMutex.withLock {
                 val cached = categoriesCache
-                if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
+                if (cached != null && System.currentTimeMillis() - cached.first < CATEGORIES_CACHE_MS) {
                     Log.d(TAG, "✓ Categorías desde caché (${cached.second.size})")
                     return Result.success(cached.second)
                 }
@@ -125,7 +126,7 @@ class LiveTvRepositoryImpl @Inject constructor(
             // ✅ Thread-safe cache check
             cacheMutex.withLock {
                 val cached = channelsCache[categoryId]
-                if (cached != null && System.currentTimeMillis() - cached.first < CACHE_DURATION_MS) {
+                if (cached != null && System.currentTimeMillis() - cached.first < CHANNELS_CACHE_MS) {
                     Log.d(TAG, "✓ Canales desde caché para categoría $categoryId (${cached.second.size})")
                     return Result.success(cached.second)
                 }
@@ -196,7 +197,7 @@ class LiveTvRepositoryImpl @Inject constructor(
         val cached = channelsCache[categoryId] ?: return null
         val age = System.currentTimeMillis() - cached.first
 
-        return if (age < CACHE_DURATION_MS) {
+        return if (age < CHANNELS_CACHE_MS) {
             Log.d(TAG, "✓ Canales en caché para $categoryId (edad: ${age / 1000}s)")
             cached.second
         } else {

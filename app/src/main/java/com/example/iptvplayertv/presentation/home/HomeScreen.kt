@@ -99,7 +99,6 @@ fun HomeScreenContent(
                 HomeSectionCard(
                     title = "TV DIRECTO",
                     icon = Icons.Default.Tv,
-                    subtitle = "${state.liveChannelsCount} canales",
                     background = Brush.verticalGradient(
                         listOf(
                             Color(0xFF1A1A1A),
@@ -113,7 +112,6 @@ fun HomeScreenContent(
                 HomeSectionCard(
                     title = "PELICULAS",
                     icon = Icons.Default.Movie,
-                    subtitle = "${state.moviesCount} películas",
                     background = Brush.verticalGradient(
                         listOf(
                             Color(0xFF1A1A1A),
@@ -127,7 +125,6 @@ fun HomeScreenContent(
                 HomeSectionCard(
                     title = "SERIES",
                     icon = Icons.Default.LocalMovies,
-                    subtitle = "${state.seriesCount} series",
                     background = Brush.verticalGradient(
                         listOf(
                             Color(0xFF1A1A1A),
@@ -260,7 +257,6 @@ fun HomeSectionCard(
     title: String,
     modifier: Modifier = Modifier,
     icon: ImageVector,
-    subtitle: String? = null,
     background: Brush,
     onClick: () -> Unit
 ) {
@@ -315,15 +311,6 @@ fun HomeSectionCard(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
-
-                subtitle?.let {
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = it,
-                        color = Color(0xFFF5F5F5).copy(alpha = 0.85f),
-                        fontSize = 16.sp
-                    )
-                }
             }
         }
     }

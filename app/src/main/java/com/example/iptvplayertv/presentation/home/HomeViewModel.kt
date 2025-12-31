@@ -52,13 +52,8 @@ class HomeViewModel @Inject constructor(
                             status = credentials.status ?: "Unknown"
                         )
                     )
+                    Log.d(TAG, "✓ Información de usuario cargada")
 
-                    // ✅ Cargar contadores (con fallback a Database)
-                    loadAllCounters(
-                        credentials.host,
-                        credentials.username,
-                        credentials.password
-                    )
                 } else {
                     Log.w(TAG, "✗ No hay credenciales guardadas")
                 }
@@ -70,25 +65,25 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun loadAllCounters(host: String, username: String, password: String) {
-        viewModelScope.launch {
-            val result = repository.getAllCounts(host, username, password)
-
-            result.onSuccess { counts ->
-                Log.d(TAG, "✓ Contadores: Live=${counts.liveChannels}, Movies=${counts.movies}, Series=${counts.series}")
-
-                _state.value = _state.value.copy(
-                    liveChannelsCount = counts.liveChannels,
-                    moviesCount = counts.movies,
-                    seriesCount = counts.series,
-                    lastUpdate = getCurrentTimestamp()
-                )
-            }.onFailure { error ->
-                Log.e(TAG, "✗ Error obteniendo contadores (usando fallback)", error)
-                // Los valores por defecto (0) ya están en el estado
-            }
-        }
-    }
+//    private fun loadAllCounters(host: String, username: String, password: String) {
+//        viewModelScope.launch {
+//            val result = repository.getAllCounts(host, username, password)
+//
+//            result.onSuccess { counts ->
+//                Log.d(TAG, "✓ Contadores: Live=${counts.liveChannels}, Movies=${counts.movies}, Series=${counts.series}")
+//
+//                _state.value = _state.value.copy(
+//                    liveChannelsCount = counts.liveChannels,
+//                    moviesCount = counts.movies,
+//                    seriesCount = counts.series,
+//                    lastUpdate = getCurrentTimestamp()
+//                )
+//            }.onFailure { error ->
+//                Log.e(TAG, "✗ Error obteniendo contadores (usando fallback)", error)
+//                // Los valores por defecto (0) ya están en el estado
+//            }
+//        }
+//    }
 
     private fun formatExpDate(timestamp: String?): String {
         if (timestamp == null) return "N/A"
