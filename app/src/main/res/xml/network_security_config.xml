@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- ✅ Permitir HTTP sin cifrar para todos los dominios -->
+    <!-- ADVERTENCIA: Esto es inseguro, pero necesario para servidores IPTV -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Certificados del sistema Android -->
+            <certificates src="system" />
+            <!-- Certificados propios de la app (si hay) -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- ✅ Configuración específica para dominios conocidos -->
+    <!-- Agrega aquí los dominios de logos si los conoces -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">bellmedia-images.imgix.net</domain>
+        <domain includeSubdomains="true">matawinie.cooptel.ca</domain>
+        <domain includeSubdomains="true">quebecormedia.com</domain>
+        <domain includeSubdomains="true">corusent.com</domain>
+        <domain includeSubdomains="true">wikipedia.org</domain>
+        <domain includeSubdomains="true">wikimedia.org</domain>
+    </domain-config>
+</network-security-config>

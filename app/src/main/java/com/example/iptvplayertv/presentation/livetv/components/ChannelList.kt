@@ -5,20 +5,16 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -51,28 +47,23 @@ fun ChannelList(
         }
     } else {
         LazyColumn(
-            //state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0x05FFFFFF)),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 20.dp, horizontal = 20.dp)
         ) {
-
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        //.padding(bottom = 20.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ){
+                    ) {
                         IconButton(
                             onClick = onBackToCategories,
-                            modifier = Modifier
-                                .size(32.dp),
+                            modifier = Modifier.size(32.dp),
                             colors = IconButtonDefaults.colors(
                                 containerColor = Color.Transparent,
                                 contentColor = Color(0xFFD97706),
@@ -91,11 +82,9 @@ fun ChannelList(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFF5F5F5),
-                            //modifier = Modifier.padding(bottom = 16.dp)
                         )
                     }
                 }
-
             }
 
             items(channels) { channel ->
@@ -114,9 +103,16 @@ fun ChannelItem(
     channel: LiveChannelDetail,
     onClick: () -> Unit
 ) {
+
+    LaunchedEffect(channel.streamId) {
+        android.util.Log.d(
+            "ChannelItem",
+            "Canal: ${channel.name} | streamIcon: '${channel.streamIcon}' | Vacío: ${channel.streamIcon.isNullOrBlank()}"
+        )
+    }
+
     var isFocused by remember { mutableStateOf(false) }
 
-    // Animación para el borde
     val borderWidth by animateDpAsState(
         targetValue = if (isFocused) 2.dp else 0.dp,
         animationSpec = tween(durationMillis = 200),
@@ -152,21 +148,12 @@ fun ChannelItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            // Channel Logo
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFF000000)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LiveTv,
-                    contentDescription = null,
-                    tint = if (channel.streamIcon != null) Color(0xFFD97706) else Color(0xFF555555),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            // ✅ CORRECCIÓN: Usar ChannelLogo con la URL real
+            ChannelLogo(
+                logoUrl = channel.streamIcon,
+                contentDescription = "Logo de ${channel.name}",
+                size = 50.dp
+            )
 
             // Channel Info
             Column(
@@ -209,7 +196,7 @@ fun ChannelListPreview() {
             name = "ESPN",
             streamType = "live",
             streamId = 1001,
-            streamIcon = "https://example.com/espn.png",
+            streamIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Logo_canal.jpg/631px-Logo_canal.jpg",
             epgChannelId = "espn",
             added = "2024-01-01",
             categoryId = "1",
@@ -224,7 +211,7 @@ fun ChannelListPreview() {
             name = "Fox Sports",
             streamType = "live",
             streamId = 1005,
-            streamIcon = null,
+            streamIcon = null, // ✅ Sin logo, mostrará ícono genérico
             epgChannelId = "foxsports",
             added = "2024-01-01",
             categoryId = "1",
